@@ -24,9 +24,9 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
     <div style={{
       display: 'flex',
       alignItems: 'flex-start',
-      justifyContent: 'space-between',
+      justifyContent: 'flex-start',
       paddingLeft: '48px',
-      paddingRight: '48px',
+      paddingRight: '64px',
       paddingTop: '0px',
       height: '72px',
     }}>
@@ -34,12 +34,12 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
       <Image
         src={isHero ? "/logo-ungrd-blanco.png" : "/logo-ungrd.png"}
         alt="UNGRD"
-        height={44}
-        width={150}
+        height={64}
+        width={210}
         style={{
           objectFit: 'contain',
           objectPosition: 'left center',
-          marginTop: '8px',
+          marginTop: '4px',
           display: 'block',
           filter: 'none',
         }}
@@ -52,6 +52,7 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
         alignItems: 'center',
         height: '100%',
         gap: '4px',
+        marginLeft: 'auto',
       }}>
         {LINKS.map(link => {
           const isActive = pathname === link.href
