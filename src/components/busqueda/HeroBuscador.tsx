@@ -1,6 +1,7 @@
 'use client'
 
 import { type KeyboardEvent } from 'react'
+import Image from 'next/image'
 import { NavBar } from '@/components/layout/NavBar'
 
 interface HeroBuscadorProps {
@@ -25,6 +26,18 @@ export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirec
         style={{ paddingTop: '72px' }}
         aria-label="Buscador de fondos"
       >
+        {/* Watermark UNGRD */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+          <Image
+            src="/logo-ungrd-sinfondo.png"
+            alt=""
+            width={900}
+            height={900}
+            className="opacity-5 absolute -right-16 bottom-6 max-w-none select-none"
+            priority
+          />
+        </div>
+
         <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
           <NavBar variant="hero" />
         </div>
