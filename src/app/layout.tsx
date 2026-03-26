@@ -8,6 +8,9 @@ const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
   weight: ['300', '400', '600', '700', '800', '900'],
   variable: '--font-nunito-sans',
+  // Desactiva el cálculo automático de métricas de fallback. Next 14.2.35
+  // no incluye overrides para "Nunito Sans" y provoca el error de build.
+  adjustFontFallback: false,
 })
 
 export const metadata: Metadata = {
