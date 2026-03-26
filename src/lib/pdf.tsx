@@ -1,4 +1,6 @@
 import { pdf } from '@react-pdf/renderer'
+import type { DocumentProps } from '@react-pdf/renderer'
+import type { ReactElement, JSXElementConstructor } from 'react'
 
 export async function descargarPDF(
   fondo: any,
@@ -8,7 +10,7 @@ export async function descargarPDF(
   const { default: React } = await import('react')
 
   const blob = await pdf(
-    React.createElement(FondoPDF, { fondo, municipio })
+    React.createElement(FondoPDF, { fondo, municipio }) as ReactElement<DocumentProps, string | JSXElementConstructor<any>>
   ).toBlob()
 
   const nombreLimpio = fondo.nombre
