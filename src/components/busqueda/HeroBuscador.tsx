@@ -8,9 +8,10 @@ interface HeroBuscadorProps {
   onQueryChange: (q: string) => void
   onComenzar: () => void
   onBusquedaDirecta: (query: string) => void
+  onReset?: () => void
 }
 
-export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirecta }: HeroBuscadorProps) {
+export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirecta, onReset }: HeroBuscadorProps) {
   function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
     if (e.key === 'Enter' && query.trim()) {
       onBusquedaDirecta(query.trim())
@@ -116,6 +117,15 @@ export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirec
               active:scale-95 transition-all">
             {'Comencemos →'}
           </button>
+          {onReset && (
+            <button
+              type="button"
+              onClick={onReset}
+              className="text-white/60 text-xs font-semibold underline underline-offset-4 hover:text-white transition-colors"
+            >
+              Reiniciar recorrido
+            </button>
+          )}
           <p className="text-white/35 text-xs font-medium">
             {'¿No sabes qué fondo elegir?'}{' '}
             <span className="text-[#FFCD00]/70 font-semibold">
