@@ -13,11 +13,12 @@ export default function Footer() {
       <div className="py-20 px-6 flex flex-col items-center gap-10">
         {/* Logo centrado */}
         <div className="flex items-center justify-center">
-          <img
+          <Image
             src="/logo-ungrd.png"
             alt="UNGRD"
+            width={220}
+            height={110}
             className="h-[110px] w-auto"
-            loading="lazy"
           />
         </div>
 

@@ -322,6 +322,7 @@ export function FondoPDF({ fondo, municipio }: Props) {
         {/* ── HEADER ── */}
         <View style={S.header} fixed>
           <View style={S.headerTop}>
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
             <Image
               src="/logo-ungrd-blanco.png"
               style={S.logo}

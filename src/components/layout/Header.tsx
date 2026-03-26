@@ -12,7 +12,6 @@ export default async function Header() {
     user = data.user
 
     if (user) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { data: municipioData } = await (supabase as any)
         .from('vista_usuario_municipio')
         .select('municipio_nombre, municipio_departamento')
