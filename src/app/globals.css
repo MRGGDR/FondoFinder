@@ -1,0 +1,165 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent Firefox/OS dark mode from inverting the page */
+:root {
+  color-scheme: light;
+}
+
+body {
+  background-color: #f9fafb; /* bg-gray-50 fallback */
+}
+
+/* ─── Flujo guiado ─────────────────────────────────────────── */
+
+/* Aparición progresiva de etapas */
+@media (prefers-reduced-motion: no-preference) {
+  .etapa-reveal {
+    animation: etapaEntrada 0.4s ease-out both;
+  }
+  @keyframes etapaEntrada {
+    from { opacity: 0; transform: translateY(20px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* Sin animación para conexión lenta / accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  .etapa-reveal { animation: none; opacity: 1; }
+}
+
+/* Input de presupuesto */
+.input-cop::placeholder { color: #aaa; }
+
+/* Grid de resultados: 3 col → 2 → 1 */
+.resultados-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+@media (max-width: 900px) {
+  .resultados-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 560px) {
+  .resultados-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Grid de procesos: 2 col → 1 en móvil */
+@media (max-width: 480px) {
+  .proceso-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+/* ─── Scrollbar personalizado ──────────────────────────────── */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 999px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #213362 0%, #07519D 100%);
+  border-radius: 999px;
+  border: 2px solid #f1f5f9;
+  transition: background 0.2s;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #213362 0%, #213362 100%);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #213362 #f1f5f9;
+}
+
+/* Ocultar scrollbar global, pero mantener scroll */
+html, body {
+  scrollbar-width: none; /* Firefox */
+}
+html::-webkit-scrollbar,
+body::-webkit-scrollbar {
+  width: 0;
+  height: 0;
+  display: none;
+}
+
+/* Ajustes móviles 360-390px sin afectar desktop */
+@media (max-width: 420px) {
+  .hero-buscador {
+    padding-top: 68px !important;
+    padding-bottom: 120px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+  .hero-nav {
+    top: 6px !important;
+    height: 82px !important;
+    padding-left: 18px !important;
+    padding-right: 18px !important;
+  }
+  .hero-logo {
+    height: 60px !important;
+    width: auto !important;
+  }
+  .hero-nav a {
+    font-size: 11px !important;
+    padding: 0 6px 8px !important;
+    letter-spacing: 0.2px !important;
+  }
+  .hero-watermark {
+    width: 420px !important;
+    height: 420px !important;
+    right: -140px !important;
+    bottom: -140px !important;
+    opacity: 0.04 !important;
+  }
+  .hero-title {
+    font-size: 42px !important;
+    line-height: 1.05 !important;
+    margin-bottom: 14px !important;
+  }
+  .hero-title .hero-highlight {
+    font-size: 46px !important;
+    letter-spacing: -1px !important;
+    underline-offset: 6px !important;
+    decoration-thickness: 4px !important;
+  }
+  .hero-chip {
+    font-size: 9px !important;
+    padding: 6px 10px !important;
+    margin-bottom: 14px !important;
+  }
+  .hero-search {
+    width: 100% !important;
+  }
+  .hero-search input {
+    font-size: 14px !important;
+    padding-top: 14px !important;
+    padding-bottom: 14px !important;
+  }
+  .hero-stats {
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .hero-cta {
+    gap: 10px;
+  }
+  .hero-cta button {
+    padding-left: 12px !important;
+    padding-right: 12px !important;
+  }
+}

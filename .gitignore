@@ -1,0 +1,43 @@
+# ---- Entorno / secretos ----
+.env
+.env.local
+.env.*.local
+.env.development
+.env.production
+.env.test
+
+# ---- Next.js ----
+.next/
+out/
+next-env.d.ts
+
+# ---- Build ----
+build/
+dist/
+
+# ---- TypeScript ----
+*.tsbuildinfo
+tsconfig.tsbuildinfo
+
+# ---- Dependencias ----
+node_modules/
+
+# ---- PWA / cache generados ----
+public/sw.js
+public/workbox-*.js
+public/worker-*.js
+public/sw.js.map
+public/workbox-*.js.map
+
+# ---- OS / editor ----
+.DS_Store
+Thumbs.db
+.vscode/settings.json
+.idea/
+
+# ---- Logs ----
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.pnpm-debug.log*
+

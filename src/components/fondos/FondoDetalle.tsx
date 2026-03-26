@@ -1,0 +1,394 @@
+﻿'use client'
+
+import Link from 'next/link'
+import { useState } from 'react'
+import { formatUSD, formatCOP } from '@/lib/utils'
+import type { FondoConRelaciones } from '@/types/database'
+import Image from 'next/image'
+import { UNGRDLoader } from '@/components/ui/UNGRDLoader'
+import { useLoader } from '@/hooks/useLoader'
+import { descargarPDF } from '@/lib/pdf'
+
+interface Props {
+  fondo: FondoConRelaciones
+}
+
+const ICONOS: Record<string, JSX.Element> = {
+  objetivo: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="12" cy="12" r="8" />
+      <circle cx="12" cy="12" r="3" />
+      <path d="M12 2v2M12 20v2M2 12h2M20 12h2" />
+    </svg>
+  ),
+  dirigido: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <circle cx="8" cy="8" r="3" />
+      <circle cx="16" cy="8" r="3" />
+      <path d="M2 20c0-3.3 2.7-6 6-6h0c3.3 0 6 2.7 6 6" />
+      <path d="M10 14c2.8 0 5 2.2 5 5" />
+    </svg>
+  ),
+  actividades: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M5 5h14v4H5zM5 11h10v4H5zM5 17h6v4H5z" />
+    </svg>
+  ),
+  requisitos: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M12 3 4 7v6c0 5 3 7 8 8 5-1 8-3 8-8V7l-8-4Z" />
+      <path d="m9 12 2 2 4-4" />
+    </svg>
+  ),
+  acceso: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M5 12h14" />
+      <path d="m13 5 7 7-7 7" />
+    </svg>
+  ),
+  instrumentos: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <rect x="3" y="3" width="18" height="6" rx="1" />
+      <rect x="3" y="11" width="18" height="10" rx="1" />
+      <path d="M8 15h8" />
+    </svg>
+  ),
+  normatividad: (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+      <path d="M8 21h8" />
+      <path d="M12 17V3" />
+      <path d="M6 9h12" />
+      <path d="M6 13h12" />
+    </svg>
+  ),
+}
+
+// Secciones del acordeón — mapeadas a campos reales del fondo
+const SECCIONES = [
+  { id: 'objetivo',     titulo: '¿Cuál es el objetivo?',        campo: 'objetivos_fondo',          iconKey: 'objetivo' },
+  { id: 'dirigido',     titulo: '¿A quién va dirigido?',        campo: 'publico_objetivo',         iconKey: 'dirigido' },
+  { id: 'actividades',  titulo: '¿Qué actividades financia?',   campo: 'actividades_apoyadas',     iconKey: 'actividades' },
+  { id: 'requisitos',   titulo: '¿Cuáles son los requisitos?',  campo: 'condiciones_elegibilidad', iconKey: 'requisitos' },
+  { id: 'acceso',       titulo: '¿Cómo accedo?',                campo: 'como_acceder',             iconKey: 'acceso' },
+  { id: 'instrumentos', titulo: 'Instrumentos de financiación', campo: 'instrumentos',             iconKey: 'instrumentos' },
+  { id: 'normatividad', titulo: 'Normatividad',                 campo: 'normatividad',             iconKey: 'normatividad' },
+]
+
+export function FondoDetalle({ fondo }: Props) {
+  // Primera sección abierta por defecto
+  const [abierta, setAbierta] = useState<string>('objetivo')
+  const { estado: loader, mostrar: mostrarLoader, ocultar: ocultarLoader } = useLoader()
+
+  const toggleSeccion = (id: string) => {
+    setAbierta(prev => prev === id ? '' : id)
+  }
+
+  const colorTipo = fondo.tipo_fondo_categoria === 'Nacional'
+    ? { bg: '#1B4472', text: '#fff' }
+    : fondo.tipo_fondo_categoria === 'Territorial'
+    ? { bg: '#07519D', text: '#fff' }
+    : { bg: '#213362', text: '#FFCD00' }
+
+  const bgDetalle =
+    fondo.tipo_fondo_categoria === 'Nacional'
+      ? 'linear-gradient(135deg, #f9fbff 0%, #e7eefc 100%)'
+      : fondo.tipo_fondo_categoria === 'Territorial'
+      ? 'linear-gradient(135deg, #f6fbff 0%, #e3f1ff 100%)'
+      : 'linear-gradient(135deg, #f9f7ff 0%, #ebe6ff 100%)'
+
+  return (
+    <div style={{ background: '#f6fafe', minHeight: '100vh', paddingBottom: '80px' }}>
+
+      {/* Franja tricolor arriba */}
+      <div style={{ display: 'flex', height: '4px', width: '100%' }}>
+        <div style={{ flex: '0 0 50%', background: '#ffc800' }} />
+        <div style={{ flex: '0 0 25%', background: '#223a7a' }} />
+        <div style={{ flex: '0 0 25%', background: '#d80e25' }} />
+      </div>
+
+      <div style={{ maxWidth: '1040px', margin: '0 auto', padding: '28px 20px 0' }}>
+
+        {/* Breadcrumb simple */}
+        <div style={{ marginBottom: '18px' }}>
+          <Link href="/fondos" style={{
+            display: 'inline-flex', alignItems: 'center', gap: '6px',
+            color: '#213362', fontWeight: 700, fontSize: '14px',
+            textDecoration: 'none',
+          }}>
+            ← Volver a resultados
+          </Link>
+        </div>
+
+        {/* Header del fondo */}
+        <div style={{
+          background: bgDetalle,
+          borderRadius: '18px',
+          padding: '32px',
+          marginBottom: '20px',
+          position: 'relative',
+          overflow: 'hidden',
+          border: '1px solid rgba(7,29,76,0.06)',
+          boxShadow: '0 18px 40px -22px rgba(7,29,76,0.35)',
+        }}>
+          {/* Badge "Activo" esquina superior derecha */}
+          <div style={{
+            position: 'absolute', top: 0, right: 0,
+            background: '#213362', color: '#FFCD00',
+            fontSize: '10px', fontWeight: 700,
+            padding: '6px 16px',
+            borderBottomLeftRadius: '12px',
+            letterSpacing: '1px', textTransform: 'uppercase',
+          }}>
+            {fondo.vigencia?.toLowerCase().includes('permanente') ? 'Fondo Activo' : 'Fondo Activo'}
+          </div>
+
+          {/* Tipo + ID */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+            <span style={{
+              background: colorTipo.bg, color: colorTipo.text,
+              fontSize: '10px', fontWeight: 700,
+              padding: '4px 12px', borderRadius: '20px',
+              textTransform: 'uppercase', letterSpacing: '0.5px',
+            }}>
+              {fondo.tipo_fondo_categoria}
+            </span>
+            <span style={{ color: '#aaa', fontSize: '12px', fontWeight: 600 }}>
+              ID: {fondo.id}
+            </span>
+          </div>
+
+          {/* Nombre */}
+          <h1 style={{
+            fontSize: '32px', fontWeight: 900, color: '#071d4c',
+            lineHeight: 1.15, letterSpacing: '-1px', marginBottom: '16px',
+          }}>
+            {fondo.nombre}
+          </h1>
+
+          {/* Entidad + Creación */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '20px' }}>
+            {fondo.entidad_encargada && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6C7175', fontSize: '13px', fontWeight: 500 }}>
+                <Image src="/icons/entidad.png" alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                {fondo.entidad_encargada}
+              </div>
+            )}
+            {fondo.creacion && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6C7175', fontSize: '13px', fontWeight: 500 }}>
+                <Image src="/icons/calendario.png" alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+                Creado en {fondo.creacion}
+              </div>
+            )}
+          </div>
+
+          {/* Tags: procesos, beneficiarios, objetivos */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
+            {fondo.procesos?.map(p => (
+              <span key={p.id} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                background: '#213362', color: '#FFCD00',
+                fontSize: '11px', fontWeight: 800,
+                padding: '5px 12px', borderRadius: '18px',
+                textTransform: 'uppercase', letterSpacing: '0.4px',
+                boxShadow: '0 8px 18px -12px rgba(7,29,76,0.55)',
+                border: '1px solid rgba(255,205,0,0.35)',
+              }}>
+                {p.nombre}
+              </span>
+            ))}
+            {fondo.beneficiarios?.map(b => (
+              <span key={b.id} style={{
+                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                background: '#F4F6FA', color: '#6C7175',
+                fontSize: '11px', fontWeight: 700,
+                padding: '4px 12px', borderRadius: '20px',
+                textTransform: 'uppercase', letterSpacing: '0.3px',
+              }}>
+                {b.nombre}
+              </span>
+            ))}
+          </div>
+        </div>
+
+        {/* Acordeón de secciones */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '20px' }}>
+          {SECCIONES.map(seccion => {
+            const contenido = (fondo as any)[seccion.campo]
+            if (!contenido) return null  // No mostrar secciones vacías
+            const estaAbierta = abierta === seccion.id
+
+            return (
+              <div key={seccion.id} id={seccion.id} style={{
+                background: '#fff',
+                borderRadius: '16px',
+                overflow: 'hidden',
+                border: '1px solid rgba(7,29,76,0.08)',
+                transition: 'box-shadow 0.15s',
+                boxShadow: estaAbierta ? '0 4px 16px rgba(7,29,76,0.08)' : 'none',
+              }}>
+                <button
+                  onClick={() => toggleSeccion(seccion.id)}
+                  style={{
+                    width: '100%', display: 'flex', alignItems: 'center',
+                    justifyContent: 'space-between', padding: '20px 24px',
+                    background: 'none', border: 'none', cursor: 'pointer',
+                    textAlign: 'left',
+                  }}
+                >
+                  <span style={{
+                    fontSize: '16px', fontWeight: 700, color: '#071d4c',
+                    display: 'flex', alignItems: 'center', gap: '10px',
+                  }}>
+                    <span style={{ fontSize: '14px', opacity: 0.6, display: 'inline-flex' }}>
+                      {ICONOS[seccion.iconKey]}
+                    </span>
+                    {seccion.titulo}
+                  </span>
+                  <span style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    width: '26px',
+                    height: '26px',
+                    borderRadius: '8px',
+                    background: estaAbierta ? 'rgba(7,29,76,0.08)' : 'rgba(7,29,76,0.04)',
+                    transition: 'transform 0.2s, background 0.2s',
+                    transform: estaAbierta ? 'rotate(180deg)' : 'rotate(0deg)',
+                  }}>
+                    <svg
+                      width="18"
+                      height="18"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="#213362"
+                      strokeWidth="2.2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="m6 9 6 6 6-6" />
+                    </svg>
+                  </span>
+                </button>
+
+                {estaAbierta && (
+                  <div style={{
+                    padding: '0 24px 24px',
+                    color: '#555', fontSize: '14px', lineHeight: 1.75,
+                    whiteSpace: 'pre-line',  // respeta saltos de línea del texto
+                  }}>
+                    {contenido}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+
+        {/* Panel especial de Monto — solo si hay datos */}
+        {(fondo.monto_texto || fondo.monto_min_usd || fondo.monto_max_usd) && (
+          <div style={{
+            background: '#213362',
+            borderRadius: '16px',
+            padding: '28px 32px',
+            marginBottom: '20px',
+            display: 'flex',
+            flexWrap: 'wrap',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: '20px',
+          }}>
+            <div>
+              <p style={{
+                color: 'rgba(255,255,255,0.45)', fontSize: '10px',
+                fontWeight: 700, textTransform: 'uppercase',
+                letterSpacing: '1.5px', marginBottom: '8px',
+              }}>
+                Monto disponible
+              </p>
+              {fondo.monto_min_usd && fondo.monto_max_usd ? (
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px' }}>
+                  <span style={{ fontSize: '36px', fontWeight: 900, color: '#fff', letterSpacing: '-1px', lineHeight: 1 }}>
+                    {formatUSD(fondo.monto_min_usd)} – {formatUSD(fondo.monto_max_usd)}
+                  </span>
+                  <span style={{ fontSize: '16px', color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>USD</span>
+                </div>
+              ) : (
+                <p style={{ fontSize: '18px', fontWeight: 700, color: '#fff', maxWidth: '100%', lineHeight: 1.5 }}>
+                  {fondo.monto_texto ?? 'Información de monto no disponible.'}
+                </p>
+              )}
+            </div>
+
+            {fondo.monto_min_usd && (
+              <div style={{ textAlign: 'right' }}>
+                <p style={{ color: 'rgba(255,255,255,0.35)', fontSize: '11px', marginBottom: '4px' }}>
+                  Equivalente aprox.
+                </p>
+                <p style={{ color: '#FFCD00', fontSize: '18px', fontWeight: 900 }}>
+                  {formatCOP(fondo.monto_min_usd)} – {formatCOP(fondo.monto_max_usd ?? fondo.monto_min_usd)} COP
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Footer — enlace y botón PDF */}
+        <div style={{
+          background: '#fff',
+          borderRadius: '16px',
+          padding: '24px 32px',
+          display: 'flex',
+          flexWrap: 'wrap',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          gap: '16px',
+          border: '1px solid rgba(7,29,76,0.08)',
+        }}>
+          <div>
+            <p style={{ color: '#888', fontSize: '13px', marginBottom: '6px' }}>
+              Para más información oficial, visita el sitio de la entidad:
+            </p>
+            {fondo.pagina_web ? (
+              <a href={fondo.pagina_web} target="_blank" rel="noopener noreferrer"
+                style={{ color: '#213362', fontWeight: 700, fontSize: '14px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                {fondo.pagina_web.replace('https://', '').replace('http://', '')}
+                <span style={{ fontSize: '12px' }}>↗</span>
+              </a>
+            ) : (
+              <p style={{ color: '#aaa', fontSize: '13px' }}>Sitio web no disponible</p>
+            )}
+          </div>
+
+          <button
+            onClick={async () => {
+              mostrarLoader('reporte')
+              try {
+                await descargarPDF(fondo, null)
+              } catch (e) {
+                console.error('Error generando PDF', e)
+              } finally {
+                ocultarLoader()
+              }
+            }}
+            style={{
+              background: '#FFCD00', color: '#071d4c',
+              padding: '14px 28px', borderRadius: '12px',
+              fontWeight: 900, fontSize: '14px', border: 'none',
+              cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '8px',
+              textTransform: 'uppercase', letterSpacing: '0.5px',
+              whiteSpace: 'nowrap',
+            }}>
+            ⇩ Descargar reporte PDF
+          </button>
+        </div>
+
+      </div>
+      <UNGRDLoader
+        visible={loader.visible}
+        contexto={loader.contexto}
+        subTexto={loader.subTexto}
+      />
+    </div>
+  )
+}
+
