@@ -257,6 +257,11 @@ function getTemaDesc(tema: string): string {
 
 interface WizardTop5Props {
   /**
+   * Modo de uso: standalone (página completa) o embedded (widget).
+   * Solo afecta layout; la lógica de pasos y búsqueda permanece igual.
+   */
+  variant?: 'standalone' | 'embedded'
+  /**
    * Forzar encabezado introductorio cuando variant=embedded.
    */
   showHeader?: boolean
