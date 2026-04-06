@@ -812,11 +812,11 @@ function PerfilBarCompacto({
   )
 }
 
-// ── _DeptoMuniTerritory ────────────────────────────────────────────────────────
+// ── DeptoMuniTerritory ─────────────────────────────────────────────────────────
 // Selector compacto de departamento→municipio para "Territorio de interés".
 // Autocontrolado, carga municipios lazy cuando el usuario elige departamento.
 
-function _DeptoMuniTerritory({
+function DeptoMuniTerritory({
   municipioId,
   onChange,
 }: {

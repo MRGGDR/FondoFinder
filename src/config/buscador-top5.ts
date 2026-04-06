@@ -1,5 +1,4 @@
 import type { AfinidadTier } from '@/types/top5'
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore — Next.js soporta resolveJsonModule
 import rowsJson from './buscador-top5.generated.json'
 
