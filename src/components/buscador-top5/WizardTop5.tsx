@@ -150,28 +150,60 @@ function WizardIcon({ type, className = 'w-6 h-6' }: { type: string; className?:
   }
 }
 
-interface OptionMeta { icon: string; desc: string }
+interface OptionMeta {
+  icon: string
+  desc: string
+  ayuda?: {
+    cuando: string
+    cuandoNo: string
+  }
+}
+
+/** Mapeo de valores internos del catálogo → etiqueta visible al usuario. No modificar los valores internos. */
+const PASO2_LABEL_OVERRIDE: Record<string, string> = {
+  'Buscar financiamiento, crédito o regalías': 'Crédito, banca o regalías',
+}
 
 const ACTOR_META: Record<string, OptionMeta> = {
   'Alcaldía / Municipio / Gobernación': {
     icon: 'building',
-    desc: 'Para entidades territoriales que buscan financiar o ejecutar proyectos en su jurisdicción.',
+    desc: 'Para entidades territoriales que buscan recursos, apoyo o rutas para responder, recuperar, formular o ejecutar iniciativas.',
+    ayuda: {
+      cuando: 'Representas una alcaldía, una gobernación o una entidad pública territorial. La necesidad nace desde el territorio y la gestión se haría desde la administración pública local o departamental.',
+      cuandoNo: 'Actúas principalmente como contratista, empresa privada, universidad o entidad financiera.',
+    },
   },
   'Empresa / Entidad financiera / Cooperativa': {
     icon: 'briefcase',
-    desc: 'Para actores privados o financieros que buscan inversión, crédito o alianzas de ejecución.',
+    desc: 'Para empresas, cooperativas, operadores, entidades financieras y actores privados con interés en financiar, implementar o escalar soluciones.',
+    ayuda: {
+      cuando: 'La gestión se haría desde una empresa, una cooperativa, una entidad financiera, un operador o un aliado privado. Aplica cuando el interés está en crédito, inversión, negocios sostenibles, ejecución, articulación o instrumentos financieros.',
+      cuandoNo: 'El actor principal es una entidad pública, una ONG o una universidad.',
+    },
   },
   'Ministerio / Entidad nacional': {
     icon: 'flag',
-    desc: 'Para entidades del orden nacional que estructuran, financian o ejecutan programas públicos.',
+    desc: 'Para ministerios, agencias, entidades del orden nacional y otras instituciones públicas con alcance nacional.',
+    ayuda: {
+      cuando: 'La gestión la lidera una entidad pública nacional o una institución con competencias nacionales. Sirve para buscar fondos, cooperación, convocatorias o mecanismos en los que aplica una entidad habilitada del orden nacional.',
+      cuandoNo: 'La ruta principal corresponde a una alcaldía, una ONG, una universidad o una empresa privada.',
+    },
   },
   'ONG / Fundación / Organización comunitaria': {
     icon: 'users',
-    desc: 'Para organizaciones sociales, ambientales o comunitarias que presentan o articulan proyectos.',
+    desc: 'Para fundaciones, asociaciones, organizaciones sociales, comunitarias y entidades sin ánimo de lucro.',
+    ayuda: {
+      cuando: 'La iniciativa la presentaría o implementaría una organización comunitaria, una fundación, una corporación o una ONG. Aplica especialmente en cooperación, proyectos territoriales, biodiversidad, adaptación y trabajo con comunidades.',
+      cuandoNo: 'El actor principal es una entidad pública, una empresa o una universidad.',
+    },
   },
   'Universidad / Investigación': {
     icon: 'academic',
-    desc: 'Para actores académicos y técnicos que buscan ciencia, innovación o fortalecimiento de capacidades.',
+    desc: 'Para universidades, centros de investigación, laboratorios, grupos académicos y actores de ciencia, tecnología e innovación.',
+    ayuda: {
+      cuando: 'La iniciativa la formulará o liderará una universidad, centro de investigación o actor del ecosistema de CTeI. Aplica especialmente para innovación, pilotos, investigación aplicada, ciencia del clima, tecnología y fortalecimiento técnico.',
+      cuandoNo: 'La ruta principal corresponde a contratación pública, ejecución de obra o atención directa de emergencia desde una entidad territorial.',
+    },
   },
 }
 
@@ -179,26 +211,93 @@ const PASO2_META: Record<string, OptionMeta> = {
   'Atender emergencia o recuperación': {
     icon: 'shield',
     desc: 'Para respuesta, rehabilitación o recuperación frente a desastres ya ocurridos.',
+    ayuda: {
+      cuando: 'Ya existe una afectación y necesitas recursos, apoyo o mecanismos para responder, rehabilitar o recuperar. Aquí entran ayuda humanitaria, atención inmediata, rehabilitación de servicios esenciales o recuperación postevento.',
+      cuandoNo: 'Todavía estás formulando un proyecto ambiental, una innovación o una ruta de financiamiento de mediano plazo.',
+    },
   },
   'Ejecutar obra o contrato': {
     icon: 'wrench',
-    desc: 'Para participar como contratista, operador o aliado en procesos ya financiados.',
+    desc: 'Para participar como contratista, operador, consultor o aliado en procesos financiados o por contratar.',
+    ayuda: {
+      cuando: 'Tu interés principal no es encontrar la fuente de recursos, sino ejecutar una obra, una consultoría, una interventoría, un suministro o un servicio. El foco está en procesos contractuales y mecanismos de contratación.',
+      cuandoNo: 'Tu prioridad es estructurar o conseguir financiamiento para una iniciativa propia.',
+    },
   },
   'Presentar proyecto ambiental o territorial': {
     icon: 'leaf',
     desc: 'Para iniciativas de conservación, adaptación, ordenamiento o desarrollo territorial.',
+    ayuda: {
+      cuando: 'Ya tienes una idea, iniciativa o proyecto y quieres encontrar fondos o mecanismos compatibles para presentarlo. Sirve para proyectos ambientales, territoriales, de cuencas, restauración, resiliencia, infraestructura local o desarrollo sostenible.',
+      cuandoNo: 'Tu objetivo principal es investigación, contratación o atención inmediata de una emergencia.',
+    },
   },
   'Buscar financiamiento, crédito o regalías': {
     icon: 'currency',
-    desc: 'Para acceder a recursos mediante fondos, banca, cooperación o SGR.',
-  },
-  'Buscar innovación o investigación': {
-    icon: 'lightbulb',
-    desc: 'Para soluciones piloto, investigación aplicada, tecnología o fortalecimiento técnico.',
+    desc: 'Para encontrar cómo estructurar o canalizar recursos hacia una iniciativa, proyecto o programa.',
+    ayuda: {
+      cuando: 'Tu prioridad es conseguir o estructurar recursos para que una iniciativa pueda avanzar. Aquí caben rutas como banca de desarrollo, crédito verde, regalías, cofinanciación, entidades acreditadas o mecanismos financieros similares.',
+      cuandoNo: 'Lo que buscas es competir por una convocatoria o participar en un contrato ya financiado.',
+    },
   },
   'Aplicar a convocatoria o cooperación': {
     icon: 'globe',
-    desc: 'Para postular a convocatorias abiertas o acceder a cooperación internacional.',
+    desc: 'Para postular una iniciativa a convocatorias competitivas, cooperación internacional o programas de apoyo técnico y financiero.',
+    ayuda: {
+      cuando: 'Buscas un mecanismo competitivo de acceso: convocatorias abiertas, cooperación internacional, llamados temáticos o ventanas de aplicación directa. La lógica es postularse, competir, cumplir requisitos y presentar documentos.',
+      cuandoNo: 'El acceso esperado es por solicitud institucional, banca, intermediación o contratación.',
+    },
+  },
+  'Buscar innovación o investigación': {
+    icon: 'lightbulb',
+    desc: 'Para pilotos, investigación aplicada, tecnología, ciencia del clima o fortalecimiento técnico.',
+    ayuda: {
+      cuando: 'Buscas desarrollar, probar, investigar o escalar soluciones innovadoras. Aplica cuando la iniciativa tiene un componente fuerte de ciencia, tecnología, experimentación, conocimiento o validación técnica.',
+      cuandoNo: 'El objetivo principal es responder a una emergencia, ejecutar una obra o buscar una convocatoria general sin foco en innovación.',
+    },
+  },
+}
+
+const PASO4_META: Record<string, OptionMeta> = {
+  'Solicitud institucional': {
+    icon: 'flag',
+    desc: 'Para rutas que dependen de una solicitud, gestión o articulación formal entre entidades.',
+    ayuda: {
+      cuando: 'El acceso se da por gestión institucional, solicitud oficial, convenio, transferencia o articulación entre entidades. Aplica más cuando una entidad pública debe activar la ruta formalmente.',
+      cuandoNo: 'La lógica principal es convocatoria abierta, banca o contratación.',
+    },
+  },
+  'Contratación / SECOP': {
+    icon: 'wrench',
+    desc: 'Para procesos en los que la entrada real ocurre mediante contratación pública o selección de operadores.',
+    ayuda: {
+      cuando: 'La participación ocurrirá a través de un proceso contractual, convocatoria de proveedor, pliego, licitación o SECOP. Aplica para contratistas, operadores, consultores, interventores y empresas.',
+      cuandoNo: 'La lógica es presentar un proyecto para financiamiento o aplicar a cooperación.',
+    },
+  },
+  'Convocatoria o aplicación directa': {
+    icon: 'globe',
+    desc: 'Para fondos o programas a los que se accede postulando una propuesta bajo términos y fechas definidas.',
+    ayuda: {
+      cuando: 'El mecanismo implica una postulación, convocatoria abierta, formulario de aplicación o evaluación competitiva. Hay ventanas, requisitos, fechas y términos de referencia.',
+      cuandoNo: 'La ruta depende más de banca, intermediación o convenio institucional.',
+    },
+  },
+  'Intermediario / entidad acreditada / banca': {
+    icon: 'currency',
+    desc: 'Para rutas donde el acceso real pasa por una entidad financiera, un intermediario o una entidad acreditada.',
+    ayuda: {
+      cuando: 'No se accede directamente al recurso, sino a través de banca de desarrollo, una entidad acreditada, un fideicomiso, una institución financiera o un intermediario habilitado. Es clave en crédito, inversión, fondos climáticos y mecanismos financieros complejos.',
+      cuandoNo: 'La lógica principal es un convenio directo, una convocatoria abierta o contratación pública.',
+    },
+  },
+  'Alianza o articulación territorial/comunitaria': {
+    icon: 'users',
+    desc: 'Para rutas donde la clave está en asociarse con comunidades, organizaciones, autoridades o alianzas territoriales.',
+    ayuda: {
+      cuando: 'El proyecto necesita una alianza territorial, comunitaria, regional o multi-actor para poder ser presentado o implementado con más fuerza. Aplica bien en cuencas, conservación, restauración, trabajo comunitario y gobernanza territorial.',
+      cuandoNo: 'El acceso real depende sobre todo de banca, convocatoria o contratación.',
+    },
   },
 }
 
@@ -285,6 +384,7 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
   const [cargando, setCargando] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [resultados, setResultados] = useState<Top5Result[]>([])
+  const [ayudaAbierta, setAyudaAbierta] = useState<string | null>(null)
 
   // Subconjuntos activos
   const rowsActor   = useMemo(() => filterRows({ actor: estado.actor }), [estado.actor])
@@ -408,7 +508,7 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
                     ¿Quién eres?
                   </h2>
                   <p className="text-gray-500 font-medium leading-relaxed">
-                    Selecciona tu perfil para ver solo los fondos que aplican a tu entidad o municipio.
+                    Selecciona el perfil que mejor representa a la entidad, organización o tipo de actor que haría la gestión.
                   </p>
                 </div>
 
@@ -417,37 +517,57 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
                   <div className="flex flex-wrap justify-center gap-4">
                     {ACTORES.map(actor => {
                       const isSelected = estado.actor === actor
+                      const helpKey = `p1:${actor}`
+                      const helpOpen = ayudaAbierta === helpKey
                       return (
-                        <button
-                          key={actor}
-                          onClick={() => setActor(actor)}
-                          className={[
-                            'rounded-2xl px-7 py-6 flex flex-row items-start gap-5 transition-all text-left w-full sm:w-[calc(50%-8px)] max-w-[460px]',
-                            isSelected
-                              ? 'bg-[#213362] text-white shadow-2xl shadow-[#213362]/30 border-2 border-[#213362]'
-                              : 'bg-white border-2 border-gray-200 hover:border-[#213362] hover:shadow-xl',
-                          ].join(' ')}
-                        >
-                          <WizardIcon
-                            type={ACTOR_META[actor]?.icon ?? 'building'}
-                            className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected ? 'text-[#FFCD00]' : 'text-[#07519D]'}`}
-                          />
-                          <div>
-                            <h4 className={`text-base font-black mb-1.5 leading-snug ${isSelected ? 'text-white' : 'text-[#213362]'}`}>
-                              {actor}
-                            </h4>
-                            {ACTOR_META[actor]?.desc && (
-                              <p className={`text-xs font-medium leading-snug ${isSelected ? 'text-white/60' : 'text-gray-400'}`}>
-                                {ACTOR_META[actor].desc}
-                              </p>
-                            )}
-                            {isSelected && (
-                              <span className="mt-2 inline-block bg-[#FFCD00] text-[#213362] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
-                                Activo
-                              </span>
-                            )}
-                          </div>
-                        </button>
+                        <div key={actor} className="w-full sm:w-[calc(50%-8px)] max-w-[460px]">
+                          <button
+                            onClick={() => setActor(actor)}
+                            className={[
+                              'rounded-2xl px-7 py-6 flex flex-row items-start gap-5 transition-all text-left w-full',
+                              isSelected
+                                ? 'bg-[#213362] text-white shadow-2xl shadow-[#213362]/30 border-2 border-[#213362]'
+                                : 'bg-white border-2 border-gray-200 hover:border-[#213362] hover:shadow-xl',
+                            ].join(' ')}
+                          >
+                            <WizardIcon
+                              type={ACTOR_META[actor]?.icon ?? 'building'}
+                              className={`w-5 h-5 mt-0.5 shrink-0 ${isSelected ? 'text-[#FFCD00]' : 'text-[#07519D]'}`}
+                            />
+                            <div>
+                              <h4 className={`text-base font-black mb-1.5 leading-snug ${isSelected ? 'text-white' : 'text-[#213362]'}`}>
+                                {actor}
+                              </h4>
+                              {ACTOR_META[actor]?.desc && (
+                                <p className={`text-xs font-medium leading-snug ${isSelected ? 'text-white/60' : 'text-gray-400'}`}>
+                                  {ACTOR_META[actor].desc}
+                                </p>
+                              )}
+                              {isSelected && (
+                                <span className="mt-2 inline-block bg-[#FFCD00] text-[#213362] px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">
+                                  Activo
+                                </span>
+                              )}
+                            </div>
+                          </button>
+                          {ACTOR_META[actor]?.ayuda && (
+                            <button
+                              type="button"
+                              onClick={() => setAyudaAbierta(helpOpen ? null : helpKey)}
+                              className="mt-1.5 text-xs text-[#07519D] hover:text-[#213362] font-medium px-2 transition-colors"
+                            >
+                              {helpOpen ? '▲ Cerrar ayuda' : '▼ ¿Cuándo usar esta opción?'}
+                            </button>
+                          )}
+                          {helpOpen && ACTOR_META[actor]?.ayuda && (
+                            <div className="mt-1 p-4 bg-[#f0f7ff] rounded-xl text-xs text-gray-600 border border-[#cce0f5] leading-relaxed">
+                              <p className="font-bold text-[#213362] mb-1">Cuándo escoger esta opción</p>
+                              <p className="mb-3">{ACTOR_META[actor].ayuda!.cuando}</p>
+                              <p className="font-bold text-[#213362] mb-1">Cuándo no escogerla</p>
+                              <p>{ACTOR_META[actor].ayuda!.cuandoNo}</p>
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -472,7 +592,7 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
                   ¿Qué necesitas?
                 </h2>
                 <p className="text-gray-500 font-medium leading-relaxed">
-                  Cuéntanos qué tipo de actividad o apoyo estás buscando financiar.
+                  Elige la opción que mejor describe tu necesidad principal en este momento.
                 </p>
               </div>
 
@@ -480,35 +600,56 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
                 role="radiogroup" aria-label="Tipo de necesidad">
                 {opcionesPaso2.map(opt => {
                   const isSelected = estado.paso2 === opt
+                  const displayLabel = PASO2_LABEL_OVERRIDE[opt] ?? opt
+                  const helpKey = `p2:${opt}`
+                  const helpOpen = ayudaAbierta === helpKey
                   return (
-                    <button
-                      key={opt}
-                      onClick={() => setPaso2(opt)}
-                      role="radio"
-                      aria-checked={isSelected}
-                      className={[
-                        'relative bg-white rounded-[2rem] p-10 border-2 text-left transition-all w-full md:w-[calc(50%-16px)] max-w-[480px]',
-                        isSelected
-                          ? 'border-[#213362] bg-[#213362]/5 shadow-xl'
-                          : 'border-transparent hover:shadow-xl hover:border-gray-200',
-                      ].join(' ')}
-                    >
-                      <WizardIcon
-                        type={PASO2_META[opt]?.icon ?? 'lightbulb'}
-                        className={`w-6 h-6 mb-4 ${isSelected ? 'text-[#213362]' : 'text-[#07519D]'}`}
-                      />
-                      <h4 className="text-xl font-black text-[#213362] mb-2">{opt}</h4>
-                      {PASO2_META[opt]?.desc && (
-                        <p className="text-sm text-gray-400 font-medium leading-snug">
-                          {PASO2_META[opt].desc}
-                        </p>
+                    <div key={opt} className="w-full md:w-[calc(50%-16px)] max-w-[480px]">
+                      <button
+                        onClick={() => setPaso2(opt)}
+                        role="radio"
+                        aria-checked={isSelected}
+                        className={[
+                          'relative bg-white rounded-[2rem] p-10 border-2 text-left transition-all w-full',
+                          isSelected
+                            ? 'border-[#213362] bg-[#213362]/5 shadow-xl'
+                            : 'border-transparent hover:shadow-xl hover:border-gray-200',
+                        ].join(' ')}
+                      >
+                        <WizardIcon
+                          type={PASO2_META[opt]?.icon ?? 'lightbulb'}
+                          className={`w-6 h-6 mb-4 ${isSelected ? 'text-[#213362]' : 'text-[#07519D]'}`}
+                        />
+                        <h4 className="text-xl font-black text-[#213362] mb-2">{displayLabel}</h4>
+                        {PASO2_META[opt]?.desc && (
+                          <p className="text-sm text-gray-400 font-medium leading-snug">
+                            {PASO2_META[opt].desc}
+                          </p>
+                        )}
+                        {isSelected && (
+                          <span className="absolute -top-3 -right-3 bg-[#213362] text-white
+                            p-2 rounded-full shadow-lg flex items-center justify-center
+                            w-8 h-8 text-sm font-black">✓</span>
+                        )}
+                      </button>
+                      {PASO2_META[opt]?.ayuda && (
+                        <button
+                          type="button"
+                          onClick={() => setAyudaAbierta(helpOpen ? null : helpKey)}
+                          className="mt-1.5 text-xs text-[#07519D] hover:text-[#213362] font-medium px-2 transition-colors"
+                        >
+                          {helpOpen ? '▲ Cerrar ayuda' : '▼ ¿Cuándo usar esta opción?'}
+                        </button>
                       )}
-                      {isSelected && (
-                        <span className="absolute -top-3 -right-3 bg-[#213362] text-white
-                          p-2 rounded-full shadow-lg flex items-center justify-center
-                          w-8 h-8 text-sm font-black">✓</span>
+                      {helpOpen && PASO2_META[opt]?.ayuda && (
+                        <div className="mt-1 p-4 bg-[#f0f7ff] rounded-xl text-xs text-gray-600 border border-[#cce0f5] leading-relaxed">
+                          <p className="font-bold text-[#213362] mb-1">Cuándo escoger esta opción</p>
+                          <p className="mb-3">{PASO2_META[opt].ayuda!.cuando}</p>
+                          <p className="font-bold text-[#213362] mb-1">Cuándo no escogerla</p>
+                          <p>{PASO2_META[opt].ayuda!.cuandoNo}</p>
+                        </div>
                       )}
-                    </button>
+                    </div>
                   )
                 })}
               </div>
@@ -539,7 +680,7 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
                   ¿Sobre qué tema?
                 </h2>
                 <p className="text-gray-500 font-medium leading-relaxed">
-                  Identifica el área temática principal de tu proyecto.
+                  Selecciona el tema que más se parece al núcleo de tu iniciativa o necesidad.
                 </p>
               </div>
 
@@ -608,26 +749,51 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
                     <span className="text-[#FFCD00]">acceder?</span>
                   </h2>
                   <p className="text-xl text-white/60 mb-10 leading-relaxed">
-                    Selecciona la vía de acceso más adecuada para tu situación.
+                    Selecciona la vía por la que crees que esa necesidad podría convertirse en recursos, apoyo o implementación.
                   </p>
                   <div className="space-y-4" role="radiogroup" aria-label="Vía de acceso">
                     {opcionesVia.map(opt => {
                       const isSelected = estado.paso4 === opt
+                      const helpKey = `p4:${opt}`
+                      const helpOpen = ayudaAbierta === helpKey
                       return (
-                        <button
-                          key={opt}
-                          onClick={() => setVia(opt)}
-                          role="radio"
-                          aria-checked={isSelected}
-                          className={[
-                            'w-full text-left p-6 rounded-2xl border-2 font-black text-lg transition-all',
-                            isSelected
-                              ? 'bg-[#FFCD00] text-[#213362] border-[#FFCD00]'
-                              : 'bg-white/10 border-white/20 text-white hover:bg-white/20',
-                          ].join(' ')}
-                        >
-                          {opt}
-                        </button>
+                        <div key={opt}>
+                          <button
+                            onClick={() => setVia(opt)}
+                            role="radio"
+                            aria-checked={isSelected}
+                            className={[
+                              'w-full text-left p-6 rounded-2xl border-2 transition-all',
+                              isSelected
+                                ? 'bg-[#FFCD00] text-[#213362] border-[#FFCD00]'
+                                : 'bg-white/10 border-white/20 text-white hover:bg-white/20',
+                            ].join(' ')}
+                          >
+                            <p className="font-black text-lg leading-snug">{opt}</p>
+                            {PASO4_META[opt]?.desc && (
+                              <p className={`text-xs font-medium mt-1 leading-snug ${isSelected ? 'text-[#213362]/70' : 'text-white/50'}`}>
+                                {PASO4_META[opt].desc}
+                              </p>
+                            )}
+                          </button>
+                          {PASO4_META[opt]?.ayuda && (
+                            <button
+                              type="button"
+                              onClick={() => setAyudaAbierta(helpOpen ? null : helpKey)}
+                              className="mt-1.5 text-xs text-white/50 hover:text-white font-medium px-2 transition-colors"
+                            >
+                              {helpOpen ? '▲ Cerrar ayuda' : '▼ ¿Cuándo usar esta opción?'}
+                            </button>
+                          )}
+                          {helpOpen && PASO4_META[opt]?.ayuda && (
+                            <div className="mt-1 p-4 bg-white/10 rounded-xl text-xs text-white/80 border border-white/20 leading-relaxed">
+                              <p className="font-bold text-[#FFCD00] mb-1">Cuándo escoger esta opción</p>
+                              <p className="mb-3">{PASO4_META[opt].ayuda!.cuando}</p>
+                              <p className="font-bold text-[#FFCD00] mb-1">Cuándo no escogerla</p>
+                              <p>{PASO4_META[opt].ayuda!.cuandoNo}</p>
+                            </div>
+                          )}
+                        </div>
                       )
                     })}
                   </div>
@@ -714,10 +880,10 @@ export function WizardTop5({ variant = 'standalone', showHeader }: WizardTop5Pro
               <div className="max-w-6xl mx-auto px-6 md:px-12 flex items-center justify-between flex-wrap gap-4">
                 <div>
                   <h2 className="text-3xl font-black text-[#213362]">
-                    {cargando ? 'Buscando...' : `${resultados.length} fondos recomendados`}
+                    {cargando ? 'Buscando...' : `${resultados.length} fondos recomendados para ti`}
                   </h2>
                   <p className="text-gray-400 font-medium mt-1 text-sm">
-                    Ordenados por afinidad con tu consulta
+                    Estos resultados se ordenan por afinidad con lo que seleccionaste en el buscador.
                   </p>
                 </div>
                 <button

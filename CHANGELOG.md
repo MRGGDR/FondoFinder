@@ -5,6 +5,43 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [1.1.0] — 2026-04-06
+
+### Agregado
+
+#### Microcopy y ayuda contextual en el Wizard Top 5
+- **`src/components/buscador-top5/WizardTop5.tsx`**
+  - Interfaz `OptionMeta` extendida con campo `ayuda: { cuando, cuandoNo }` para cada opción de los pasos 1, 2 y 4
+  - `PASO2_LABEL_OVERRIDE` — mapeo de valores internos del catálogo a etiquetas visibles; `'Buscar financiamiento, crédito o regalías'` se muestra como **"Crédito, banca o regalías"** (el valor enviado al backend no cambia)
+  - `PASO4_META` — nuevo objeto con descripciones cortas y textos de ayuda para las 5 opciones de la vía de acceso (Paso 4)
+  - `ayudaAbierta` state — un solo panel de ayuda expandido a la vez; funciona con tap en móvil y clic/hover en desktop
+  - Botón **"▼ ¿Cuándo usar esta opción?"** bajo cada tarjeta de los pasos 1, 2 y 4; muestra panel con "Cuándo escoger" y "Cuándo no escoger"
+  - Todos los subtítulos de pasos 1–4 actualizados al copy maestro definitivo
+  - Encabezado del Paso 5 actualizado: título "Fondos recomendados para ti" + subtítulo de afinidad
+  - Passos 4 ahora muestran descripción corta debajo de cada opción de vía de acceso
+
+- **`src/components/buscador-top5/ResultadosTop5.tsx`**
+  - Labels de badges de afinidad actualizados: `alta` → **"Alta afinidad"**, `media` → **"Afinidad media"**, `baja` → **"Afinidad exploratoria"**
+  - Eliminado prefijo `"Afinidad "` hardcodeado en el render; ahora usa el valor completo desde `TIER_LABEL`
+
+#### Widget de comentarios flotante
+- **`src/components/feedback/FeedbackWidget.tsx`** — botón flotante fijo en esquina inferior derecha; al pulsarlo abre un panel modal con:
+  - Valoración emoji (1–5)
+  - Tipo de comentario: Sugerencia / Reportar error / Opinión general / Otro
+  - Campo de texto libre (máx. 1000 caracteres)
+  - Confirmación visual tras envío exitoso
+  - Funciona en todas las vistas (montado en el layout raíz)
+- **`src/app/api/feedback/route.ts`** — `POST /api/feedback`; valida y persiste en tabla `feedback_herramienta` de Supabase via `getDb()`; requiere al menos valoración o mensaje
+- **`src/app/layout.tsx`** — `<FeedbackWidget />` agregado al layout raíz; visible en todas las páginas y flujos
+
+### SQL pendiente de ejecutar en Supabase
+```sql
+-- Tabla feedback_herramienta (ver instrucciones en sesión 2026-04-06)
+-- Ejecutar en Supabase SQL Editor antes de usar el widget de comentarios
+```
+
+---
+
 ## [1.0.0] — 2026-04-05
 
 ### Resumen

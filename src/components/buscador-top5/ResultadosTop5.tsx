@@ -17,9 +17,9 @@ const BADGE_TIER: Record<string, string> = {
 }
 
 const TIER_LABEL: Record<string, string> = {
-  alta:  'Alta',
-  media: 'Media',
-  baja:  'Estándar',
+  alta:  'Alta afinidad',
+  media: 'Afinidad media',
+  baja:  'Afinidad exploratoria',
 }
 
 function buildFundCardSummary(r: Top5Result): string | null {
@@ -147,7 +147,7 @@ export function ResultadosTop5({ resultados, cargando, error, onRetry }: Props) 
                     </span>
                   )}
                   <span className={`px-3 py-1 rounded-full text-[10px] font-black uppercase ${BADGE_TIER[r.tier_afinidad] ?? BADGE_TIER.baja}`}>
-                    Afinidad {TIER_LABEL[r.tier_afinidad] ?? r.tier_afinidad}
+                    {TIER_LABEL[r.tier_afinidad] ?? `Afinidad ${r.tier_afinidad}`}
                   </span>
                 </div>
 

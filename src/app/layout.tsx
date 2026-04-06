@@ -5,6 +5,7 @@ import Footer from '@/components/layout/Footer'
 import { AppHeader } from '@/components/layout/AppHeader'
 import { LightSessionProvider } from '@/context/LightSessionContext'
 import AccessGate from '@/components/access/AccessGate'
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 
 const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
@@ -37,6 +38,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
                 {children}
               </main>
               <Footer />
+              <FeedbackWidget />
             </div>
           </AccessGate>
         </LightSessionProvider>
