@@ -92,6 +92,7 @@ interface RankingWeights {
   territorial_incluye_depto:   number
   territorial_prioriza_muni:   number
   territorial_prioriza_depto:  number
+  score_terminos_weight:       number
   /** Almacenado positivo en la tabla; se aplica como negativo en código */
   territorial_excluye_penalty: number
   /** Boost extra de score_texto para consultas de conocimiento/innovación (0 = sin cambio) */
@@ -114,6 +115,7 @@ const WEIGHTS_DEFAULTS: RankingWeights = {
   territorial_incluye_depto:   0.12,
   territorial_prioriza_muni:   0.14,
   territorial_prioriza_depto:  0.08,
+  score_terminos_weight:       1.0,
   territorial_excluye_penalty: 0.30,
   conocimiento_boost:          0.0,
   territorial_match_municipio_include_bonus:    0,
