@@ -213,6 +213,8 @@ export interface ResultadoBusquedaNarrativa {
   objetivos: { id: number; nombre: string }[]
   score_total: number
   score_texto: number
+  /** Señal de contexto (desastre + afectación). No siempre expuesta por el RPC; opcional para compatibilidad. */
+  score_contexto?: number
   score_terminos: number
   score_instructivo: number
   score_sujeto: number
