@@ -1,7 +1,7 @@
 import {
   Document, Page, Text, View, StyleSheet, Image, Link
 } from '@react-pdf/renderer'
-import type { FondoConRelaciones } from '@/types/database'
+import type { FondoConRelaciones, FondoInstructivo } from '@/types/database'
 
 // ── Colores UNGRD ──────────────────────────────────────
 const C = {
@@ -296,6 +296,7 @@ function fechaHoy(): string {
 interface Props {
   fondo: FondoConRelaciones
   municipio?: { municipio_nombre: string; municipio_departamento: string } | null
+  instructivo?: FondoInstructivo | null
 }
 
 const SECCIONES_PDF = [
@@ -308,7 +309,7 @@ const SECCIONES_PDF = [
   { titulo: 'Normatividad',               campo: 'normatividad' },
 ]
 
-export function FondoPDF({ fondo, municipio }: Props) {
+export function FondoPDF({ fondo, municipio, instructivo }: Props) {
   const tipColor = colorTipo(fondo.tipo_fondo_categoria)
 
   return (
@@ -450,6 +451,76 @@ export function FondoPDF({ fondo, municipio }: Props) {
               </Link>
             </View>
           )}
+
+          {/* ── Paso a paso / Instructivo ── */}
+          <View style={[S.divisor, { marginTop: 20 }]} />
+          <View style={S.seccion} wrap={false}>
+            <View style={[S.seccionHeader, { borderLeftColor: instructivo ? '#006633' : C.gray }]}>
+              <Text style={S.seccionTitulo}>
+                {instructivo ? 'Instructivo Paso a Paso' : 'Paso a Paso'}
+              </Text>
+            </View>
+            {instructivo ? (
+              <View>
+                {instructivo.estado_convocatoria && (
+                  <View style={{
+                    backgroundColor: instructivo.estado_convocatoria.toUpperCase().includes('ABIERT')
+                      ? '#e6f4ee'
+                      : instructivo.estado_convocatoria.toUpperCase().includes('CERRAD')
+                      ? '#fdecea'
+                      : C.grayLight,
+                    borderLeftWidth: 3,
+                    borderLeftColor: instructivo.estado_convocatoria.toUpperCase().includes('ABIERT')
+                      ? '#16a34a'
+                      : instructivo.estado_convocatoria.toUpperCase().includes('CERRAD')
+                      ? C.red
+                      : C.grayMid,
+                    paddingHorizontal: 10,
+                    paddingVertical: 6,
+                    borderRadius: 4,
+                    marginBottom: 8,
+                  }}>
+                    <Text style={{
+                      fontSize: 8,
+                      fontFamily: 'Helvetica-Bold',
+                      textTransform: 'uppercase',
+                      letterSpacing: 0.8,
+                      marginBottom: 3,
+                      color: instructivo.estado_convocatoria.toUpperCase().includes('ABIERT')
+                        ? '#006633'
+                        : instructivo.estado_convocatoria.toUpperCase().includes('CERRAD')
+                        ? C.red
+                        : C.gray,
+                    }}>Estado de convocatoria</Text>
+                    <Text style={{ fontSize: 9, color: C.textMid, lineHeight: 1.5 }}>
+                      {instructivo.estado_convocatoria}
+                    </Text>
+                  </View>
+                )}
+                {instructivo.descripcion && (
+                  <Text style={[S.seccionContenido, { marginBottom: 6 }]}>
+                    {instructivo.descripcion}
+                  </Text>
+                )}
+                {instructivo.proceso_formulacion && (
+                  <Text style={[S.seccionContenido, { marginBottom: 4 }]}>
+                    <Text style={{ fontFamily: 'Helvetica-Bold', color: C.navy }}>Proceso: </Text>
+                    {instructivo.proceso_formulacion}
+                  </Text>
+                )}
+                {instructivo.fechas_clave && (
+                  <Text style={[S.seccionContenido, { marginBottom: 4 }]}>
+                    <Text style={{ fontFamily: 'Helvetica-Bold', color: C.navy }}>Fechas clave: </Text>
+                    {instructivo.fechas_clave}
+                  </Text>
+                )}
+              </View>
+            ) : (
+              <Text style={[S.seccionContenido, { color: C.gray, fontStyle: 'italic' }]}>
+                No hay un paso a paso definido para este fondo.
+              </Text>
+            )}
+          </View>
 
         </View>
 

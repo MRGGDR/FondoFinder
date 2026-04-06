@@ -15,7 +15,6 @@ export async function middleware(request: NextRequest) {
           return request.cookies.getAll()
         },
         setAll(cookiesToSet: { name: string; value: string; options?: Partial<ResponseCookie> }[]) {
-          // En middleware no se puede mutar request.cookies; solo escribir en la respuesta.
           supabaseResponse = NextResponse.next({ request })
           cookiesToSet.forEach(({ name, value, options }) => {
             supabaseResponse.cookies.set(name, value, options)
@@ -25,21 +24,12 @@ export async function middleware(request: NextRequest) {
     }
   )
 
-  // IMPORTANT: do not call supabase.auth.getSession() — always use getUser()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  // Refrescar sesión de Supabase Auth (necesario para admin/backoffice que sí lo use)
+  await supabase.auth.getUser()
 
-  const pathname = request.nextUrl.pathname
-
-  // Redirigir usuarios autenticados fuera de /login y /registro
-  if (user && (pathname === '/login' || pathname === '/registro')) {
+  // /login ahora redirige a / (la identificación ocurre via modal global)
+  if (request.nextUrl.pathname === '/login') {
     return NextResponse.redirect(new URL('/', request.url))
-  }
-
-  // Proteger /perfil para usuarios no autenticados
-  if (!user && pathname.startsWith('/perfil')) {
-    return NextResponse.redirect(new URL('/login', request.url))
   }
 
   return supabaseResponse

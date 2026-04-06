@@ -41,3 +41,23 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
+# ---- Scripts temporales de desarrollo ----
+tmp-*.js
+tmp_*.txt
+start-all.js
+
+# ---- Documentación de sesión / contexto de desarrollo ----
+FondosFinder_*.md
+docs/
+contexto/
+
+# ---- SQL (migraciones ya ejecutadas en Supabase) ----
+sql/
+
+# ---- Plantilla de proyecto anterior ----
+Predeterminado_Proyecto_con_mapa/
+
+# ---- Páginas legacy (sistema de búsqueda anterior, solo referencia local) ----
+src/app/buscar-legacy/
+src/app/buscar-legacy2/
+

@@ -18,6 +18,17 @@ const withPWA = require('next-pwa')({
 
 const nextConfig = {
   reactStrictMode: true,
+  async headers() {
+    return [
+      {
+        // Cache GeoJSON estáticos por 7 días — rara vez cambian
+        source: '/:file*.geojson',
+        headers: [
+          { key: 'Cache-Control', value: 'public, max-age=604800, stale-while-revalidate=86400' },
+        ],
+      },
+    ]
+  },
   webpack: (config, { dev }) => {
     if (dev) {
       // Use file-based source maps instead of eval() wrappers.

@@ -3,6 +3,8 @@ import { Nunito_Sans } from 'next/font/google'
 import './globals.css'
 import Footer from '@/components/layout/Footer'
 import { AppHeader } from '@/components/layout/AppHeader'
+import { LightSessionProvider } from '@/context/LightSessionContext'
+import AccessGate from '@/components/access/AccessGate'
 
 const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
@@ -27,13 +29,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="es" style={{ colorScheme: 'light' }}>
       <body className={`${nunitoSans.variable} font-sans bg-gray-50 antialiased`}>
-        <div className="min-h-screen flex flex-col">
-          <AppHeader />
-          <main className="flex-1">
-            {children}
-          </main>
-          <Footer />
-        </div>
+        <LightSessionProvider>
+          <AccessGate>
+            <div className="min-h-screen flex flex-col">
+              <AppHeader />
+              <main className="flex-1">
+                {children}
+              </main>
+              <Footer />
+            </div>
+          </AccessGate>
+        </LightSessionProvider>
       </body>
     </html>
   )

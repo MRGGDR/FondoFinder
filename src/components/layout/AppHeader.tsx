@@ -5,7 +5,8 @@ import { NavBar } from './NavBar'
 
 export function AppHeader() {
   const pathname = usePathname()
-  if (pathname === '/') return null
+  // Páginas con hero propio y nav interna (no muestran el AppHeader global)
+  if (pathname === '/' || pathname === '/buscar') return null
 
   return (
     <header style={{

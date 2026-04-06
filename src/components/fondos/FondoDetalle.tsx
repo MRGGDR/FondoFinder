@@ -1,13 +1,13 @@
 ﻿'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { formatUSD, formatCOP } from '@/lib/utils'
-import type { FondoConRelaciones } from '@/types/database'
+import type { FondoConRelaciones, FondoInstructivo } from '@/types/database'
 import Image from 'next/image'
 import { UNGRDLoader } from '@/components/ui/UNGRDLoader'
 import { useLoader } from '@/hooks/useLoader'
-import { descargarPDF } from '@/lib/pdf'
+import { descargarPDF, descargarPasoPDF } from '@/lib/pdf'
 
 interface Props {
   fondo: FondoConRelaciones
@@ -74,10 +74,69 @@ const SECCIONES = [
   { id: 'normatividad', titulo: 'Normatividad',                 campo: 'normatividad',             iconKey: 'normatividad' },
 ]
 
+// ── Helpers para el encabezado ───────────────────────────────────────────────
+
+/** Construye una frase funcional corta (máx ~2 líneas) que responde «¿para qué sirve?» */
+function buildFundHeaderSummary(fondo: FondoConRelaciones): string | null {
+  const extractFirst = (text: string | null, max = 160): string | null => {
+    if (!text) return null
+    // Quitar numeración de listas y saltos para tomar la primera idea
+    const clean = text.replace(/^\d+\.\s*/gm, '').trim()
+    const first = clean.split(/[.\n]/)[0]?.trim()
+    if (!first || first.length < 15) return null
+    return first.length > max ? first.slice(0, max).replace(/\s\S*$/, '…') : first
+  }
+  // Preferir objetivos_fondo, luego actividades_apoyadas
+  return extractFirst(fondo.objetivos_fondo) ?? extractFirst(fondo.actividades_apoyadas)
+}
+
+/** Formatea el monto disponible en una cadena corta limpia */
+function formatFundAmount(fondo: FondoConRelaciones): string | null {
+  if (fondo.monto_min_usd && fondo.monto_max_usd) {
+    const f = (n: number) => `USD ${(n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + 'M' : n >= 1_000 ? (n / 1_000).toFixed(0) + 'K' : n.toFixed(0))}`
+    return `${f(fondo.monto_min_usd)} – ${f(fondo.monto_max_usd)}`
+  }
+  if (fondo.monto_min_usd) {
+    const n = fondo.monto_min_usd
+    return `Desde USD ${n >= 1_000_000 ? (n / 1_000_000).toFixed(1) + 'M' : n >= 1_000 ? (n / 1_000).toFixed(0) + 'K' : n.toFixed(0)}`
+  }
+  if (fondo.monto_texto) {
+    const noData = /no aparece|no se detalla|n\/a|sin información/i.test(fondo.monto_texto)
+    if (!noData) {
+      const short = fondo.monto_texto.split('.')[0]?.trim()
+      if (short && short.length < 70) return short
+    }
+  }
+  return null
+}
+
+/** Devuelve true solo si el valor de creación es util (no vacío/placeholder) */
+function creacionValida(val: string | null | undefined): val is string {
+  if (!val || val.trim() === '') return false
+  return !/no se detalla|n\/a|sin información|no disponible/i.test(val)
+}
+
 export function FondoDetalle({ fondo }: Props) {
   // Primera sección abierta por defecto
   const [abierta, setAbierta] = useState<string>('objetivo')
   const { estado: loader, mostrar: mostrarLoader, ocultar: ocultarLoader } = useLoader()
+
+  // Instructivo paso a paso
+  const [instructivo, setInstructivo] = useState<FondoInstructivo | null>(null)
+  const [instructivoLoaded, setInstructivoLoaded] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/fondos/${fondo.id}/instructivo`)
+      .then(r => {
+        if (r.ok) return r.json() as Promise<FondoInstructivo>
+        return null
+      })
+      .then(data => {
+        setInstructivo(data)
+        setInstructivoLoaded(true)
+      })
+      .catch(() => setInstructivoLoaded(true))
+  }, [fondo.id])
 
   const toggleSeccion = (id: string) => {
     setAbierta(prev => prev === id ? '' : id)
@@ -110,78 +169,160 @@ export function FondoDetalle({ fondo }: Props) {
 
         {/* Breadcrumb simple */}
         <div style={{ marginBottom: '18px' }}>
-          <Link href="/fondos" style={{
+          <Link href="/" style={{
             display: 'inline-flex', alignItems: 'center', gap: '6px',
             color: '#213362', fontWeight: 700, fontSize: '14px',
             textDecoration: 'none',
           }}>
-            ← Volver a resultados
+            ← Volver al inicio
           </Link>
         </div>
 
-        {/* Header del fondo */}
+        {/* Header del fondo — refinado */}
         <div style={{
           background: bgDetalle,
           borderRadius: '18px',
-          padding: '32px',
+          padding: '28px 32px 24px',
           marginBottom: '20px',
-          position: 'relative',
-          overflow: 'hidden',
           border: '1px solid rgba(7,29,76,0.06)',
           boxShadow: '0 18px 40px -22px rgba(7,29,76,0.35)',
         }}>
-          {/* Badge "Activo" esquina superior derecha */}
-          <div style={{
-            position: 'absolute', top: 0, right: 0,
-            background: '#213362', color: '#FFCD00',
-            fontSize: '10px', fontWeight: 700,
-            padding: '6px 16px',
-            borderBottomLeftRadius: '12px',
-            letterSpacing: '1px', textTransform: 'uppercase',
-          }}>
-            {fondo.vigencia?.toLowerCase().includes('permanente') ? 'Fondo Activo' : 'Fondo Activo'}
-          </div>
 
-          {/* Tipo + ID */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '16px', flexWrap: 'wrap' }}>
+          {/* A ─ Zona superior: tipo · ID · Fondo Activo · estado convocatoria */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px', flexWrap: 'wrap' }}>
             <span style={{
               background: colorTipo.bg, color: colorTipo.text,
               fontSize: '10px', fontWeight: 700,
-              padding: '4px 12px', borderRadius: '20px',
+              padding: '3px 12px', borderRadius: '20px',
               textTransform: 'uppercase', letterSpacing: '0.5px',
             }}>
               {fondo.tipo_fondo_categoria}
             </span>
-            <span style={{ color: '#aaa', fontSize: '12px', fontWeight: 600 }}>
-              ID: {fondo.id}
+            <span style={{ color: '#c0c8d8', fontSize: '13px', lineHeight: 1 }}>·</span>
+            <span style={{ color: '#8a94a6', fontSize: '11px', fontWeight: 600, letterSpacing: '0.3px' }}>
+              {fondo.id}
             </span>
+            <span style={{ color: '#c0c8d8', fontSize: '13px', lineHeight: 1 }}>·</span>
+            <span style={{
+              fontSize: '10px', fontWeight: 700, color: '#213362',
+              letterSpacing: '0.5px', textTransform: 'uppercase',
+            }}>
+              Fondo Activo
+            </span>
+            {instructivoLoaded && instructivo?.estado_convocatoria && (() => {
+              const est = instructivo.estado_convocatoria
+              const isAb = est.toUpperCase().includes('ABIERT')
+              const isCe = est.toUpperCase().includes('CERRAD')
+              if (!isAb && !isCe) return null
+              return (
+                <span style={{
+                  background: isAb ? '#dcfce7' : '#fee2e2',
+                  color: isAb ? '#15803d' : '#dc2626',
+                  fontSize: '10px', fontWeight: 700,
+                  padding: '3px 10px', borderRadius: '20px',
+                  letterSpacing: '0.3px',
+                }}>
+                  Convocatoria {isAb ? 'ABIERTA' : 'CERRADA'}
+                </span>
+              )
+            })()}
           </div>
 
-          {/* Nombre */}
+          {/* B ─ Nombre */}
           <h1 style={{
             fontSize: '32px', fontWeight: 900, color: '#071d4c',
-            lineHeight: 1.15, letterSpacing: '-1px', marginBottom: '16px',
+            lineHeight: 1.15, letterSpacing: '-1px', margin: '0 0 10px 0',
           }}>
             {fondo.nombre}
           </h1>
 
-          {/* Entidad + Creación */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px', marginBottom: '20px' }}>
+          {/* C ─ Meta: entidad · creación · vigencia */}
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px 18px', marginBottom: '14px' }}>
             {fondo.entidad_encargada && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6C7175', fontSize: '13px', fontWeight: 500 }}>
-                <Image src="/icons/entidad.png" alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#6C7175', fontSize: '13px', fontWeight: 500 }}>
+                <Image src="/icons/entidad.png" alt="" width={14} height={14} style={{ width: 14, height: 14, objectFit: 'contain', opacity: 0.6 }} />
                 {fondo.entidad_encargada}
-              </div>
+              </span>
             )}
-            {fondo.creacion && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: '#6C7175', fontSize: '13px', fontWeight: 500 }}>
-                <Image src="/icons/calendario.png" alt="" width={16} height={16} style={{ width: 16, height: 16, objectFit: 'contain' }} />
+            {creacionValida(fondo.creacion) && (
+              <span style={{ display: 'flex', alignItems: 'center', gap: '5px', color: '#8a94a6', fontSize: '12px', fontWeight: 500 }}>
+                <Image src="/icons/calendario.png" alt="" width={13} height={13} style={{ width: 13, height: 13, objectFit: 'contain', opacity: 0.5 }} />
                 Creado en {fondo.creacion}
-              </div>
+              </span>
+            )}
+            {fondo.vigencia && !/no se detalla/i.test(fondo.vigencia) && (
+              <span style={{
+                fontSize: '11px', fontWeight: 600, color: '#4a5568',
+                background: 'rgba(7,29,76,0.05)', padding: '2px 10px',
+                borderRadius: '12px', letterSpacing: '0.2px',
+              }}>
+                {fondo.vigencia}
+              </span>
             )}
           </div>
 
-          {/* Tags: procesos, beneficiarios, objetivos */}
+          {/* D ─ Frase funcional corta */}
+          {(() => {
+            const resumen = buildFundHeaderSummary(fondo)
+            if (!resumen) return null
+            return (
+              <p style={{
+                fontSize: '14px', color: '#454f6b',
+                lineHeight: 1.65, margin: '0 0 18px 0',
+                maxWidth: '700px',
+              }}>
+                {resumen}
+              </p>
+            )
+          })()}
+
+          {/* E ─ Franja rápida de información */}
+          {(() => {
+            const items: { label: string; value: string; accent?: string }[] = []
+            const monto = formatFundAmount(fondo)
+            if (monto) items.push({ label: 'Monto', value: monto })
+            if (fondo.vigencia && !/no se detalla/i.test(fondo.vigencia))
+              items.push({ label: 'Vigencia', value: fondo.vigencia })
+            if (instructivoLoaded && instructivo?.ciclo_convocatoria) {
+              const short = instructivo.ciclo_convocatoria.split(/[.\n]/)[0]?.trim()
+              if (short && short.length < 80) items.push({ label: 'Ciclo', value: short })
+            }
+            if (instructivoLoaded && instructivo?.estado_convocatoria) {
+              const est = instructivo.estado_convocatoria
+              const isAb = est.toUpperCase().includes('ABIERT')
+              const isCe = est.toUpperCase().includes('CERRAD')
+              if (isAb || isCe)
+                items.push({ label: 'Convocatoria', value: isAb ? '● Abierta' : '● Cerrada', accent: isAb ? '#15803d' : '#dc2626' })
+            }
+            if (items.length === 0) return null
+            return (
+              <div style={{
+                display: 'flex', flexWrap: 'wrap', gap: '8px',
+                borderTop: '1px solid rgba(7,29,76,0.07)',
+                paddingTop: '16px', marginBottom: '20px',
+              }}>
+                {items.map((item, i) => (
+                  <div key={i} style={{
+                    background: 'rgba(7,29,76,0.04)', borderRadius: '10px',
+                    padding: '8px 16px', minWidth: '80px',
+                  }}>
+                    <div style={{
+                      fontSize: '9px', color: '#a0a8b8',
+                      textTransform: 'uppercase', letterSpacing: '0.5px',
+                      marginBottom: '3px', fontWeight: 700,
+                    }}>
+                      {item.label}
+                    </div>
+                    <div style={{ fontSize: '12px', fontWeight: 700, color: item.accent ?? '#213362' }}>
+                      {item.value}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )
+          })()}
+
+          {/* F ─ Tags: procesos, beneficiarios (sin cambios) */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px' }}>
             {fondo.procesos?.map(p => (
               <span key={p.id} style={{
@@ -363,7 +504,7 @@ export function FondoDetalle({ fondo }: Props) {
             onClick={async () => {
               mostrarLoader('reporte')
               try {
-                await descargarPDF(fondo, null)
+                await descargarPDF(fondo, null, instructivo)
               } catch (e) {
                 console.error('Error generando PDF', e)
               } finally {
@@ -379,6 +520,36 @@ export function FondoDetalle({ fondo }: Props) {
               whiteSpace: 'nowrap',
             }}>
             ⇩ Descargar reporte PDF
+          </button>
+
+          {/* Botón paso a paso */}
+          <button
+            disabled={!instructivoLoaded || !instructivo}
+            onClick={async () => {
+              if (!instructivo) return
+              mostrarLoader('paso a paso')
+              try {
+                await descargarPasoPDF(fondo, instructivo)
+              } catch (e) {
+                console.error('Error generando PDF paso a paso', e)
+              } finally {
+                ocultarLoader()
+              }
+            }}
+            title={!instructivoLoaded ? 'Cargando...' : !instructivo ? 'Este fondo no tiene un paso a paso definido' : 'Descargar guía paso a paso'}
+            style={{
+              background: instructivoLoaded && instructivo ? '#213362' : '#e5e7eb',
+              color: instructivoLoaded && instructivo ? '#FFCD00' : '#9ca3af',
+              padding: '14px 28px', borderRadius: '12px',
+              fontWeight: 900, fontSize: '14px',
+              border: instructivoLoaded && instructivo ? 'none' : '1px solid #d1d5db',
+              cursor: instructivoLoaded && instructivo ? 'pointer' : 'not-allowed',
+              display: 'flex', alignItems: 'center', gap: '8px',
+              textTransform: 'uppercase', letterSpacing: '0.5px',
+              whiteSpace: 'nowrap',
+              opacity: instructivoLoaded && !instructivo ? 0.6 : 1,
+            }}>
+            {!instructivoLoaded ? '⌛ Paso a Paso' : instructivo ? '⇩ Paso a Paso' : '✕ Paso a Paso'}
           </button>
         </div>
 

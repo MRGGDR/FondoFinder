@@ -1,28 +1,34 @@
 'use client'
 
-import { type KeyboardEvent } from 'react'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 import { NavBar } from '@/components/layout/NavBar'
 
 interface HeroBuscadorProps {
-  query: string
-  onQueryChange: (q: string) => void
   onComenzar: () => void
-  onBusquedaDirecta: (query: string) => void
   onReset?: () => void
+  /**
+   * Modo de CTA: single = botón único "Comencemos".
+   * triple = tres botones (Guiado, Avanzado, Libre).
+   */
+  ctaVariant?: 'single' | 'triple'
+  onBuscadorAvanzado?: () => void
+  onBuscadorLibre?: () => void
 }
 
-export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirecta, onReset }: HeroBuscadorProps) {
-  function handleKeyDown(e: KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Enter' && query.trim()) {
-      onBusquedaDirecta(query.trim())
-    }
-  }
+export function HeroBuscador({
+  onComenzar,
+  onReset,
+  ctaVariant = 'single',
+  onBuscadorAvanzado,
+  onBuscadorLibre,
+}: HeroBuscadorProps) {
+  const router = useRouter()
 
   return (
     <>
       <section
-        className="min-h-screen bg-[#213362] flex flex-col items-center justify-center px-6 text-center pb-16 relative"
+        className="min-h-screen bg-[#213362] flex flex-col items-center justify-center px-6 text-center pb-20 relative overflow-hidden"
         style={{ paddingTop: '72px' }}
         aria-label="Buscador de fondos"
       >
@@ -38,7 +44,7 @@ export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirec
           />
         </div>
 
-        <div style={{ position: 'absolute', top: 0, left: 0, right: 0 }}>
+        <div style={{ position: 'absolute', top: 16, left: 0, right: 0 }}>
           <NavBar variant="hero" />
         </div>
 
@@ -57,47 +63,19 @@ export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirec
           <span className="block text-[80px] md:text-[96px] leading-none
             tracking-[-3px] text-[#FFCD00] italic underline
             decoration-white/15 underline-offset-[8px]">
-            financiamiento
+            fondo de financiamiento
           </span>
           para tu municipio
         </h1>
 
         {/* Subtítulo */}
         <p className="text-white/50 text-base md:text-lg font-normal
-          leading-relaxed max-w-[520px] mb-10">
-          32 fuentes de financiamiento disponibles para la gestión del riesgo
-          en Colombia. Nacionales, territoriales e internacionales.
+          leading-relaxed max-w-[520px] mb-8">
+          Identifica en minutos qué fondo financia tu proyecto de gestión del riesgo.
         </p>
 
-        {/* Buscador grande */}
-        <div className="w-full max-w-[640px] flex items-center bg-white/[0.08]
-          border-[1.5px] border-white/[0.18] rounded-2xl overflow-hidden mb-6
-          focus-within:border-[#FFCD00] focus-within:bg-white/10 transition-all">
-          <div className="px-5 flex items-center flex-shrink-0">
-            <svg className="w-5 h-5" fill="none" stroke="rgba(255,255,255,0.35)"
-              strokeWidth="1.8" viewBox="0 0 20 20" aria-hidden="true">
-              <circle cx="9" cy="9" r="6" />
-              <path d="m16 16-3-3" strokeLinecap="round" />
-            </svg>
-          </div>
-          <label htmlFor="hero-search" className="sr-only">
-            {'¿Qué proyecto buscas financiar?'}
-          </label>
-          <input
-            id="hero-search"
-            type="text"
-            value={query}
-            onChange={e => onQueryChange(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={'¿Qué proyecto buscas financiar?'}
-            className="flex-1 bg-transparent border-none outline-none
-              text-white text-[15px] placeholder:text-white/30
-              py-[17px] pr-4 font-normal"
-          />
-        </div>
-
         {/* Stats */}
-        <div className="flex items-center justify-center mb-10">
+        <div className="flex items-center justify-center mb-8">
           <div className="text-center px-6">
             <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">32</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Fondos</div>
@@ -121,40 +99,81 @@ export function HeroBuscador({ query, onQueryChange, onComenzar, onBusquedaDirec
 
         {/* CTA */}
         <div className="flex flex-col items-center gap-3">
-          <button
-            onClick={onComenzar}
-            className="bg-[#FFCD00] text-[#213362] text-sm font-black
-              px-14 py-4 rounded-[14px] uppercase tracking-[1px]
-              shadow-[0_8px_32px_rgba(255,205,0,0.25)]
-              hover:brightness-110 hover:scale-[1.02]
-              active:scale-95 transition-all">
-            {'Comencemos →'}
-          </button>
-          {onReset && (
-            <button
-              type="button"
-              onClick={onReset}
-              className="text-white/60 text-xs font-semibold underline underline-offset-4 hover:text-white transition-colors"
-            >
-              Reiniciar recorrido
-            </button>
+          {ctaVariant === 'single' && (
+            <>
+              <button
+                onClick={onComenzar}
+                className="bg-[#FFCD00] text-[#213362] text-sm font-black
+                  px-14 py-4 rounded-[14px] uppercase tracking-[1px]
+                  shadow-[0_8px_32px_rgba(255,205,0,0.25)]
+                  hover:brightness-110 hover:scale-[1.02]
+                  active:scale-95 transition-all">
+                {'Comencemos →'}
+              </button>
+              {onReset && (
+                <button
+                  type="button"
+                  onClick={onReset}
+                  className="text-white/60 text-xs font-semibold underline underline-offset-4 hover:text-white transition-colors"
+                >
+                  Reiniciar recorrido
+                </button>
+              )}
+            </>
           )}
-          <p className="text-white/35 text-xs font-medium">
-            {'¿No sabes qué fondo elegir?'}{' '}
-            <span className="text-[#FFCD00]/70 font-semibold">
-              Te guiamos paso a paso
-            </span>
-          </p>
+
+          {ctaVariant === 'triple' && (
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {/* Buscador Guiado */}
+              <button
+                onClick={onComenzar}
+                className="group flex flex-col items-center gap-1.5 bg-[#FFCD00] text-[#213362]
+                  px-8 py-5 rounded-2xl min-w-[210px]
+                  shadow-[0_8px_32px_rgba(255,205,0,0.30)]
+                  hover:brightness-110 hover:scale-[1.02]
+                  active:scale-95 transition-all"
+              >
+                <span className="text-[11px] font-black uppercase tracking-[1.2px] opacity-60">Paso a paso</span>
+                <span className="text-[17px] font-black uppercase tracking-[0.6px] leading-none">Buscador Guiado →</span>
+                <span className="text-[11px] font-semibold opacity-50 leading-tight max-w-[180px] text-center">
+                  Te ayudamos a encontrar el fondo ideal
+                </span>
+              </button>
+
+              {/* Buscador Avanzado */}
+              <button
+                onClick={onBuscadorAvanzado ?? (() => {})}
+                className="group flex flex-col items-center gap-1.5 bg-white/10 text-white
+                  px-8 py-5 rounded-2xl min-w-[210px]
+                  border border-white/25
+                  hover:bg-white/15 hover:scale-[1.02]
+                  active:scale-95 transition-all"
+              >
+                <span className="text-[11px] font-black uppercase tracking-[1.2px] opacity-60">Catálogo completo</span>
+                <span className="text-[17px] font-black uppercase tracking-[0.6px] leading-none">Búsqueda Avanzada →</span>
+                <span className="text-[11px] font-semibold opacity-50 leading-tight max-w-[180px] text-center">
+                  Filtra por tipo, estado, territorio y más
+                </span>
+              </button>
+            </div>
+          )}
+
+
         </div>
+
+        {/* Franja tricolor Colombia fija en la base del hero */}
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute bottom-0 left-0 right-0 h-[14px] md:h-[16px] lg:h-[18px] z-30"
+          style={{
+            background:
+              'linear-gradient(90deg, #ffc800 0%, #ffc800 50%, #223a7a 50%, #223a7a 75%, #d80e25 75%, #d80e25 100%)',
+            boxShadow: '0 -4px 14px rgba(0,0,0,0.14)',
+          }}
+        />
 
       </section>
 
-      {/* Franja tricolor Colombia */}
-      <div className="flex h-[6px] w-full" aria-hidden="true">
-        <div className="w-1/2 bg-[#FFC800]" />
-        <div className="w-1/4 bg-[#223A7A]" />
-        <div className="w-1/4 bg-[#D80E25]" />
-      </div>
     </>
   )
 }

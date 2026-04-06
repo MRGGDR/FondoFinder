@@ -1,104 +1,114 @@
 'use client'
 
 import Image from 'next/image'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
-import { useRouter } from 'next/navigation'
+import { useRouter, usePathname } from 'next/navigation'
+import { useEffect } from 'react'
 import { UNGRDLoader } from '@/components/ui/UNGRDLoader'
 import { useLoader } from '@/hooks/useLoader'
 
-const LINKS = [
-  { href: '/',       label: 'Inicio' },
-  { href: '/fondos', label: 'Fondos' },
-  { href: '/mapa',   label: 'Mapa' },
-  { href: '/admin',  label: 'Admin' },
-]
-
 export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
-  const pathname = usePathname()
   const isHero = variant === 'hero'
   const router = useRouter()
+  const pathname = usePathname()
   const { estado: loader, mostrar: mostrarLoader, ocultar: ocultarLoader } = useLoader()
+
+  // Apagar el loader cuando la ruta cambia (la navegación terminó)
+  useEffect(() => {
+    ocultarLoader()
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pathname])
 
   return (
     <div style={{
       display: 'flex',
-      alignItems: 'flex-start',
+      alignItems: 'center',
       justifyContent: 'flex-start',
       paddingLeft: '48px',
       paddingRight: '64px',
-      paddingTop: '0px',
-      height: '72px',
+      paddingTop: '18px',
+      height: '92px',
     }}>
       {/* Logo */}
       <Image
         src={isHero ? "/logo-ungrd-blanco.png" : "/logo-ungrd.png"}
         alt="UNGRD"
-        height={64}
+        height={isHero ? 78 : 64}
         width={210}
         style={{
           objectFit: 'contain',
           objectPosition: 'left center',
-          marginTop: '4px',
+          marginTop: '0px',
           display: 'block',
           filter: 'none',
         }}
         priority
       />
 
-      {/* Links de navegación */}
-      <nav style={{
+      {/* Botonera de iconos sueltos */}
+      <div style={{
+        marginLeft: 'auto',
         display: 'flex',
         alignItems: 'center',
-        height: '100%',
-        gap: '4px',
-        marginLeft: 'auto',
+        gap: '10px',
+        padding: '0 6px',
       }}>
-        {LINKS.map(link => {
-          const isActive = pathname === link.href
-          const baseColor = isHero ? 'rgba(255,255,255,0.45)' : 'rgba(7,29,76,0.4)'
-          const activeColor = isHero ? '#ffffff' : '#071d4c'
+        {[
+          { title: 'Inicio', href: '/', heroIcon: '/icons/home.png' as string | null, lightIcon: '/icons/home_negro.png' as string | null },
+          { title: 'Fondos', href: '/buscar-avanzado', heroIcon: '/icons/Fondos.png' as string | null, lightIcon: '/icons/Fondos_negro.png' as string | null },
+          { title: 'Mapa', href: '/mapa', heroIcon: '/icons/mapa.png' as string | null, lightIcon: '/icons/mapa_negro.png' as string | null },
+          { title: 'Admin', href: '/admin', heroIcon: '/icons/admin.png' as string | null, lightIcon: '/icons/admin_negro.png' as string | null },
+        ].map((item, idx) => {
+          const activo = pathname === item.href || (item.href === '/buscar-avanzado' && pathname === '/fondos')
+          const baseColor = isHero ? '#ffffff' : '#071d4c'
+          const activeDrop = isHero ? 'drop-shadow(0 6px 12px rgba(255,200,0,0.55))' : 'drop-shadow(0 6px 12px rgba(7,29,76,0.35))'
+          const iconSrc = isHero ? item.heroIcon : item.lightIcon
           return (
-            <Link
-              key={link.href}
-              href={link.href}
-              onClick={(e) => {
-                e.preventDefault()
-                if (pathname === link.href) return
-                mostrarLoader('buscando')
-                router.push(link.href)
-                // loader se desmonta al cambiar de página; no se necesita ocultar aquí
-              }}
+          <button
+            key={idx}
+            type="button"
+            aria-label={item.title}
+            style={{
+              width: '48px',
+              height: '48px',
+              borderRadius: '50%',
+              border: '0',
+              backgroundColor: 'transparent',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              color: baseColor,
+              transition: 'transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease',
+              cursor: 'pointer',
+              opacity: activo ? 1 : 0.7,
+            }}
+            onMouseEnter={e => {
+              e.currentTarget.style.transform = 'translateY(-3px)'
+              e.currentTarget.style.filter = activeDrop
+            }}
+            onMouseLeave={e => {
+              e.currentTarget.style.transform = 'translateY(0)'
+              e.currentTarget.style.filter = 'none'
+            }}
+            onClick={() => {
+              if (pathname === item.href) return
+              mostrarLoader('cargando')
+              router.push(item.href)
+            }}
+          >
+            <Image
+              src={iconSrc!}
+              alt={item.title}
+              width={28}
+              height={28}
               style={{
-                color: isActive ? activeColor : baseColor,
-                fontSize: '13px',
-                fontWeight: 600,
-                padding: '0 18px 16px',
-                borderBottom: isActive
-                  ? '2px solid #FFCD00'
-                  : '2px solid transparent',
-                background: 'none',
-                borderRadius: '0',
-                textDecoration: 'none',
-                whiteSpace: 'nowrap',
-                letterSpacing: '0.3px',
-                transition: 'color 0.15s',
-                display: 'block',
+                filter: activo ? activeDrop : 'none',
+                objectFit: 'contain',
               }}
-              onMouseEnter={e => {
-                e.currentTarget.style.color = activeColor
-                e.currentTarget.style.borderBottomColor = '#FFCD00'
-              }}
-              onMouseLeave={e => {
-                e.currentTarget.style.color = isActive ? activeColor : baseColor
-                e.currentTarget.style.borderBottomColor = isActive ? '#FFCD00' : 'transparent'
-              }}
-            >
-              {link.label}
-            </Link>
-          )
-        })}
-      </nav>
+              priority={idx === 0}
+            />
+          </button>
+        )})}
+      </div>
 
       {/* Espacio derecho — sin botón de ingresar */}
       <div style={{ width: '180px' }} />

@@ -5,6 +5,129 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [1.0.0] — 2026-04-05
+
+### Resumen
+Versión completa y funcional del sistema FondosFinder. Durante la semana del 30 de marzo al 5 de abril de 2026 se construyó la arquitectura backend v2, el motor de búsqueda narrativa guiada, el dashboard de analítica territorial con mapa de calor, el flujo de identidad pública sin contraseña, y la búsqueda avanzada. El sistema está desplegado y operativo.
+
+---
+
+### Agregado — Motor de búsqueda narrativa (semana 2026-03-30 / 2026-04-04)
+
+#### API backend v2
+- **`src/lib/db.ts`** — capa de acceso a base de datos portable; único punto de integración con Supabase (o futuro PostgreSQL puro); expone `getDb()` con cliente de servicio
+- **`src/app/api/busqueda/catalogo/route.ts`** — POST; llama la función legacy `buscar_fondos()`; usada por `useBusqueda` y `FlujoBuscador`; no requiere sesión
+- **`src/app/api/busqueda/narrativa/route.ts`** — POST; llama `buscar_fondos_narrativo_v2()`; persiste `search_events` + `search_event_results`; enriquece payload con `sujeto_ui`, `predicado_ui`, `verbos_ui`, `complementos_ui` haciendo `fetchTermNames()` en paralelo con la RPC
+- **`src/app/api/busqueda/top5/route.ts`** — POST; retorna top 5 fondos por perfil y contexto de búsqueda
+- **`src/app/api/catalogos/narrativa/route.ts`** — GET; devuelve `cat_narrativa_terminos` agrupados por categoría para poblar los selectores del flujo narrativo
+- **`src/app/api/perfiles/crear-o-recuperar/route.ts`** — POST; crea o recupera `perfiles_consulta` sin contraseña; normalización NFD+unmark para aproximar `fn_normalizar_texto()` de la DB
+- **`src/app/api/perfiles/recuperar-por-codigo/route.ts`** — POST; recupera perfil existente por código `FF-XXXX`
+- **`src/app/api/fondos/[id]/route.ts`** — GET; retorna detalle completo del fondo desde `vista_fondo_detalle`
+- **`src/app/api/fondos/[id]/instructivo/route.ts`** — GET; retorna `fondos_instructivos` del fondo
+- **`src/app/api/fondos/[id]/modelo-aplicacion/route.ts`** — GET; retorna `fondos_modelos_aplicacion` del fondo
+- **`src/app/api/municipios/route.ts`** — GET; búsqueda de municipios por nombre para el flujo de registro e identidad
+- **`src/app/api/mapa/route.ts`** — GET; datos de municipios con coordenadas para `ColombiaMap`
+
+#### API Admin — Analítica territorial
+- **`src/app/api/admin/analytics/kpis/route.ts`** — GET; KPIs globales: total usuarios, total búsquedas, municipios activos, departamentos activos, top fondos consultados
+- **`src/app/api/admin/analytics/mapa-origen/route.ts`** — GET; datos de heatmap con `?modo=busquedas|usuarios`; join defensivo con tabla de municipios para resolver `divipola → count`
+- **`src/app/api/admin/analytics/territorio/route.ts`** — GET; detalle analítico por `?municipio_id=UUID` o `?dept_code=XX`; agregación TypeScript desde `search_events`
+- **`src/app/api/admin/mapa/origen/route.ts`** — GET; alimenta vista `vw_busquedas_por_municipio_origen_v2`
+- **`src/app/api/admin/mapa/consulta/route.ts`** — GET; alimenta vista `vw_busquedas_por_municipio_consulta_v2`
+- **`src/app/api/admin/top-fondos/route.ts`** — GET; alimenta `vw_top_fondos_consultados_v2`
+
+#### Flujo de búsqueda narrativa guiada (`/buscar`)
+- **`src/app/buscar/page.tsx`** — Server Component; punto de entrada a la búsqueda narrativa; maneja SSR y paso inicial
+- **`src/app/buscar/BuscarClient.tsx`** — wrapper cliente que monta el flujo narrativo
+- **`src/components/busqueda/FlujoBuscadorNarrativo.tsx`** — orquestador del flujo de 5 etapas; maneja estado global de la búsqueda narrativa
+- **`src/components/busqueda/EtapaSujeto.tsx`** — etapa 1: selección del sujeto (¿quién busca?)
+- **`src/components/busqueda/EtapaPredicado.tsx`** — etapa 2: selección del predicado (¿qué necesita?)
+- **`src/components/busqueda/EtapaContexto.tsx`** — etapa 3: contexto territorial y sectorial
+- **`src/components/busqueda/EtapaIdentidad.tsx`** — etapa 4: captura de identidad pública (municipio, nombre) sin contraseña
+- **`src/components/busqueda/EtapaResultadosNarrativa.tsx`** — etapa 5: resultados rankeados con score narrativo, etiquetas de relevancia y paginación
+- **`src/components/busqueda/ConsultaNarrativa.tsx`** — resumen visual de la consulta construida en lenguaje natural
+- **`src/components/busqueda/ResumenNarrativo.tsx`** — chip con el texto de la consulta formada
+- **`src/components/fondos/PasoPDF.tsx`** — componente de descarga PDF dentro del flujo de resultados narrativos
+
+#### Búsqueda avanzada (`/buscar-avanzado`)
+- **`src/app/buscar-avanzado/page.tsx`** — página de búsqueda avanzada con filtros múltiples
+- **`src/components/busqueda-avanzada/BuscadorAvanzado.tsx`** — formulario con filtros: tipo de fondo, sector, monto mínimo/máximo, palabras clave; resultados en tabla con ordenamiento
+- **`src/types/buscador-avanzado.ts`** — tipos TypeScript para el buscador avanzado
+
+#### Buscador Top 5
+- **`src/components/buscador-top5/WizardTop5.tsx`** — wizard de 3 pasos para obtener las 5 mejores recomendaciones personalizadas
+- **`src/components/buscador-top5/ResultadosTop5.tsx`** — tarjetas de resultado Top 5 con score de compatibilidad
+- **`src/types/top5.ts`** — tipos TypeScript del sistema Top 5
+
+#### Dashboard admin territorial — Mapa de calor
+- **`src/app/mapa/page.tsx`** — **reemplazado**: ahora es panel de analítica territorial para admin; heatmap de origen de usuarios y búsquedas por municipio/departamento
+- **`src/components/mapa/ColombiaMapAdmin.tsx`** — nuevo: heatmap D3 con prop `activityData` (divipola → count); escala de color `#E8F4FD → #213362` (intensidad de actividad); agrupación de municipios por departamento (primeros 2 dígitos divipola)
+- **`src/components/mapa/ColombiaMap.tsx`** — mapa interactivo de Colombia preservado para uso público futuro
+- **`public/col_departamentos.geojson`** — GeoJSON con polígonos de los 32 departamentos de Colombia
+- **`public/col_municipios.geojson`** — GeoJSON con polígonos de todos los municipios de Colombia
+
+#### Identidad pública y sesión ligera
+- **`src/hooks/usePerfilConsulta.ts`** — hook de identidad pública; persiste `perfil_id` + código `FF-XXXX` en `localStorage`; no requiere autenticación Supabase
+- **`src/hooks/useBusquedaNarrativa.ts`** — hook que gestiona el ciclo completo de una búsqueda narrativa; llama `/api/busqueda/narrativa`; expone estado de carga, error y resultados
+- **`src/hooks/useCatalogoNarrativa.ts`** — hook que carga y cachea `cat_narrativa_terminos` desde `/api/catalogos/narrativa`
+- **`src/lib/lightSession.ts`** — utilidades para la sesión ligera sin autenticación (lectura/escritura de `localStorage` con TTL)
+- **`src/context/LightSessionContext.tsx`** — contexto React para propagar el perfil de consulta anónimo por el árbol de componentes
+
+#### Control de acceso
+- **`src/components/access/AccessGate.tsx`** — guard que verifica si el usuario tiene perfil activo; bloquea acceso a funcionalidades que lo requieren
+- **`src/components/access/AccessModal.tsx`** — modal de identificación rápida (nombre + municipio) para obtener perfil sin registro formal
+
+#### Configuración
+- **`src/config/`** — constantes de configuración de la app (endpoints, timeouts, flags de feature)
+
+---
+
+### Modificado — Semana 2026-03-30 / 2026-04-05
+
+#### Páginas existentes migradas a API interna
+- **`src/app/fondos/page.tsx`** — migrado de cliente Supabase directo a `getDb()` server-side
+- **`src/app/fondo/[id]/page.tsx`** — migrado a `getDb()`; llama `/api/fondos/[id]` para el detalle
+- **`src/app/login/page.tsx`** — refinado: mejor manejo de errores de OTP, mensajes en español, UX mejorada
+- **`src/app/layout.tsx`** — integrado `LightSessionContext`; `AppHeader` actualizado con links a `/buscar` y `/buscar-avanzado`
+
+#### Componentes actualizados
+- **`src/components/busqueda/FlujoBuscador.tsx`** — eliminado `createBrowserClient` directo; ahora consume `/api/busqueda/catalogo`
+- **`src/components/busqueda/HeroBuscador.tsx`** — botón "Búsqueda guiada" lleva a `/buscar`; botón "Búsqueda avanzada" lleva a `/buscar-avanzado`
+- **`src/components/fondos/FondoDetalle.tsx`** — acordeón actualizado con sección de modelos de aplicación; botón de descarga PDF refinado
+- **`src/components/fondos/FondoPDF.tsx`** — template PDF actualizado con secciones de modelos de aplicación
+- **`src/components/fondos/FondosGrid.tsx`** — mejoras de UI: skeleton loader, mensaje de "sin resultados", paginación
+- **`src/components/layout/AppHeader.tsx`** — links de navegación ampliados con `/buscar` y `/buscar-avanzado`; indicador de perfil activo
+- **`src/components/layout/NavBar.tsx`** — ítem "Buscar" ahora apunta a `/buscar`
+- **`src/hooks/useBusqueda.ts`** — refactorizado para usar fetch sobre `/api/busqueda/catalogo`; eliminada dependencia directa de Supabase browser client
+- **`src/lib/pdf.tsx`** — correcciones de tipado TypeScript strict
+- **`src/middleware.ts`** — ajustado matcher: rutas `/perfil` protegidas; `/buscar` y `/buscar-avanzado` son públicas
+- **`src/types/database.ts`** — extendido con tipos v2: `TerminoNarrativo`, `PerfilConsulta`, `SearchEvent`, `SearchEventResult`, `ResultadoBusquedaNarrativa`, `KpisAdmin`, `MapaOrigenItem`
+- **`next.config.js`** — actualizado con headers CORS para rutas API; variable de entorno `NEXT_PUBLIC_APP_URL`
+- **`package.json`** / **`package-lock.json`** — dependencias nuevas: `d3`, `d3-geo`, `topojson-client`, `@types/d3`, `@types/topojson-client`
+- **`.env.example`** — añadida variable `SUPABASE_SERVICE_ROLE_KEY` y `NEXT_PUBLIC_APP_URL`
+
+#### Iconos de navegación (PWA / móvil)
+- **`public/icons/home.png`** + **`home_negro.png`** — ícono de inicio
+- **`public/icons/Fondos.png`** + **`Fondos_negro.png`** — ícono de catálogo de fondos
+- **`public/icons/mapa.png`** + **`mapa_negro.png`** — ícono de mapa / analítica
+- **`public/icons/admin.png`** + **`admin_negro.png`** — ícono de administración
+
+---
+
+### Migraciones SQL ejecutadas en Supabase (referencia, no se suben al repo)
+- `001` — extensión `buscar_fondos_narrativo_v2` con score ponderado
+- `002` — políticas RLS para `perfiles_consulta`
+- `003` — fix en cálculo de `score_total` en el ranking
+- `004` — refinamiento del ranking municipal con peso por distancia
+- `005` — score de sector operacional
+- `006` — pesos configurables por perfil de consulta
+- `007` — bridge entre sistema narrativo y catálogo legacy
+- `009` — parche de vectores de búsqueda FTS
+- `010` — RLS deshabilitado en `search_events` y `search_event_results` (escritura server-side)
+- `011` — `perfil_id` nullable en `search_events` para búsquedas anónimas
+
+---
+
 ## [0.3.0] — 2026-03-25
 
 ### Agregado

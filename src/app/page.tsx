@@ -1,5 +1,5 @@
-import { FlujoBuscador } from '@/components/busqueda/FlujoBuscador'
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  return <FlujoBuscador />
+  redirect('/buscar')
 }

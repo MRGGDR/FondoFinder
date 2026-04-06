@@ -1,6 +1,5 @@
 'use client'
 import { useState, useEffect, useCallback } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 import type { ResultadoBusqueda } from '@/types/database'
 
 export interface FiltrosBusqueda {
@@ -78,23 +77,39 @@ export function useBusqueda() {
       } catch { /* caché inválido, continuar con fetch */ }
     }
 
-    // createBrowserClient without Database generic so rpc() accepts Record<string, unknown>
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-    const { data, error: rpcError } = await supabase.rpc('buscar_fondos', {
-      p_query: debouncedQuery || null,
-      p_tipo_fondo: filtros.tipoFondo || null,
-      p_proceso_ids: filtros.procesoIds.length ? filtros.procesoIds : null,
-      p_beneficiario_ids: filtros.beneficiarioIds.length ? filtros.beneficiarioIds : null,
-      p_objetivo_ids: filtros.objetivoIds.length ? filtros.objetivoIds : null,
-      p_presupuesto_usd: filtros.presupuestoUSD,
-      p_limit: LIMIT,
-      p_offset: (filtros.pagina - 1) * LIMIT,
-    })
+    try {
+      const res = await fetch('/api/busqueda/catalogo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: debouncedQuery || null,
+          tipo_fondo: filtros.tipoFondo || null,
+          proceso_ids: filtros.procesoIds.length ? filtros.procesoIds : undefined,
+          beneficiario_ids: filtros.beneficiarioIds.length ? filtros.beneficiarioIds : undefined,
+          objetivo_ids: filtros.objetivoIds.length ? filtros.objetivoIds : undefined,
+          presupuesto_usd: filtros.presupuestoUSD ?? null,
+          limit: LIMIT,
+          offset: (filtros.pagina - 1) * LIMIT,
+        }),
+      })
 
-    if (rpcError) {
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`)
+      }
+
+      const json = await res.json() as { resultados: ResultadoBusqueda[]; total_count: number }
+      const rows = json.resultados ?? []
+      setResultados(rows)
+      setTotal(json.total_count ?? rows[0]?.total_count ?? 0)
+
+      // Guardar caché solo en búsqueda sin filtros (página 1)
+      if (esFiltroInicial(filtros) && rows.length > 0 && typeof window !== 'undefined') {
+        try {
+          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: rows, timestamp: Date.now() }))
+        } catch { /* localStorage puede estar lleno */ }
+      }
+      setCargando(false)
+    } catch (fetchError) {
       // Si falla la red, intentar caché aunque sea la búsqueda inicial
       if (esFiltroInicial(filtros) && typeof window !== 'undefined') {
         try {
@@ -111,22 +126,11 @@ export function useBusqueda() {
           }
         } catch { /* caché inválido */ }
       }
-      setError(rpcError.message)
+      setError(fetchError instanceof Error ? fetchError.message : 'Error de red')
       setResultados([])
       setTotal(0)
-    } else {
-      const rows = (data as ResultadoBusqueda[]) ?? []
-      setResultados(rows)
-      setTotal(rows[0]?.total_count ?? 0)
-
-      // Guardar caché solo en búsqueda sin filtros (página 1)
-      if (esFiltroInicial(filtros) && rows.length > 0 && typeof window !== 'undefined') {
-        try {
-          localStorage.setItem(CACHE_KEY, JSON.stringify({ data: rows, timestamp: Date.now() }))
-        } catch { /* localStorage puede estar lleno */ }
-      }
+      setCargando(false)
     }
-    setCargando(false)
   }, [
     debouncedQuery,
     filtros,

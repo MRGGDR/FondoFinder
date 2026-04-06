@@ -1,7 +1,6 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
-import { createBrowserClient } from '@supabase/ssr'
 import type { ResultadoBusqueda, TipoFondo } from '@/types/database'
 import { HeroBuscador } from './HeroBuscador'
 import { EtapaTipo } from './EtapaTipo'
@@ -82,32 +81,37 @@ export function FlujoBuscador() {
     mostrarLoader('buscando')
     revelarEtapa('resultados', refResultados)
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
     const presupuestoNum = f.presupuestoCOP
       ? parseFloat(f.presupuestoCOP.replace(/\./g, '')) / 4200
       : null
 
-    const { data, error } = await supabase.rpc('buscar_fondos', {
-      p_query: f.query || null,
-      p_tipo_fondo: f.tipoFondo ?? null,
-      p_proceso_ids: f.procesoIds.length > 0 ? f.procesoIds : null,
-      p_objetivo_ids: f.objetivoIds.length > 0 ? f.objetivoIds : null,
-      p_presupuesto_usd: presupuestoNum,
-      p_limit: 12,
-      p_offset: 0,
-    })
+    try {
+      const res = await fetch('/api/busqueda/catalogo', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: f.query || null,
+          tipo_fondo: f.tipoFondo ?? null,
+          proceso_ids: f.procesoIds.length > 0 ? f.procesoIds : undefined,
+          objetivo_ids: f.objetivoIds.length > 0 ? f.objetivoIds : undefined,
+          presupuesto_usd: presupuestoNum,
+          limit: 12,
+          offset: 0,
+        }),
+      })
 
-    const rows = (data as ResultadoBusqueda[]) ?? []
-    if (!error) {
+      const json = res.ok
+        ? (await res.json() as { resultados: ResultadoBusqueda[]; total_count: number })
+        : { resultados: [], total_count: 0 }
+
+      const rows = json.resultados ?? []
       setResultados(rows)
-      setTotalResultados(rows[0]?.total_count ?? rows.length)
-    } else {
+      setTotalResultados(json.total_count ?? rows[0]?.total_count ?? rows.length)
+    } catch {
       setResultados([])
       setTotalResultados(0)
     }
+
     ocultarLoader()
   }
 
