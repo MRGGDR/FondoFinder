@@ -175,13 +175,13 @@ export async function GET(req: NextRequest) {
     }
 
     const eventoIds  = eventos.map(e => e.id)
-    const perfilIds  = [...new Set(eventos.map(e => e.perfil_id).filter(Boolean))] as string[]
+    const perfilIds  = Array.from(new Set(eventos.map(e => e.perfil_id).filter(Boolean))) as string[]
     const usuariosUnicos = perfilIds.length
 
     // ── Paralelo: perfiles + resultados de búsqueda + nombres de términos ─────
-    const sujetoIds    = [...new Set(eventos.map(e => e.sujeto_termino_id).filter(Boolean))] as string[]
-    const predicadoIds = [...new Set(eventos.map(e => e.predicado_termino_id).filter(Boolean))] as string[]
-    const terminoIds   = [...new Set([...sujetoIds, ...predicadoIds])]
+    const sujetoIds    = Array.from(new Set(eventos.map(e => e.sujeto_termino_id).filter(Boolean))) as string[]
+    const predicadoIds = Array.from(new Set(eventos.map(e => e.predicado_termino_id).filter(Boolean))) as string[]
+    const terminoIds   = Array.from(new Set([...sujetoIds, ...predicadoIds]))
 
     const [perfilesRes, resultadosRes, terminosRes, fondosNombresRes] = await Promise.all([
       // Actores (tipo_actor de perfiles) — solo los que han buscado en este territorio

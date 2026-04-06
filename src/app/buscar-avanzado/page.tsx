@@ -149,23 +149,23 @@ export default async function BuscarAvanzadoPage() {
       beneficiarios: benefMap[fid] ?? [],
       objetivos: objetivosMap[fid] ?? [],
       coberturas,
-      departamentos_cobertura: [...new Set(coberturas.map(c => c.codigo_departamento).filter(Boolean) as string[])],
-      municipios_cobertura: [...new Set(coberturas.map(c => c.municipio_id).filter(Boolean) as string[])],
+      departamentos_cobertura: Array.from(new Set(coberturas.map(c => c.codigo_departamento).filter(Boolean) as string[])),
+      municipios_cobertura: Array.from(new Set(coberturas.map(c => c.municipio_id).filter(Boolean) as string[])),
     }
   })
 
   // --- Derive filter options from real data ---
-  const accesoOpciones = [...new Set(
+  const accesoOpciones = Array.from(new Set(
     (modelosRaw ?? []).map(m => (m as Record<string, unknown>).acceso).filter(Boolean) as string[]
-  )].sort((a, b) => a.localeCompare(b, 'es'))
+  )).sort((a, b) => a.localeCompare(b, 'es'))
 
-  const estadoOpciones = [...new Set(
+  const estadoOpciones = Array.from(new Set(
     (modelosRaw ?? []).map(m => (m as Record<string, unknown>).estado_convocatoria).filter(Boolean) as string[]
-  )].sort((a, b) => a.localeCompare(b, 'es'))
+  )).sort((a, b) => a.localeCompare(b, 'es'))
 
-  const periodicidadOpciones = [...new Set(
+  const periodicidadOpciones = Array.from(new Set(
     (modelosRaw ?? []).map(m => (m as Record<string, unknown>).periodicidad).filter(Boolean) as string[]
-  )].sort((a, b) => a.localeCompare(b, 'es'))
+  )).sort((a, b) => a.localeCompare(b, 'es'))
 
   const catBenef: CatItem[] = (catBenefRaw ?? []).map(c => {
     const r = c as Record<string, unknown>
@@ -187,12 +187,12 @@ export default async function BuscarAvanzadoPage() {
   })
 
   // --- Territory options ---
-  const depCodes = [...new Set(
+  const depCodes = Array.from(new Set(
     (coberturaRaw ?? []).map(c => (c as Record<string, unknown>).codigo_departamento).filter(Boolean) as string[]
-  )]
-  const municipioIds = [...new Set(
+  ))
+  const municipioIds = Array.from(new Set(
     (coberturaRaw ?? []).map(c => (c as Record<string, unknown>).municipio_id).filter(Boolean) as string[]
-  )]
+  ))
 
   const [{ data: deptoNamesRaw }, { data: municipiosRaw }] = await Promise.all([
     depCodes.length > 0

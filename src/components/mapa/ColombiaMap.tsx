@@ -420,7 +420,7 @@ export default function ColombiaMap() {
     } else {
       highlightMuni(code, name, dCode)
     }
-  }, [fetchFondos])
+  }, [fetchFondos]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function highlightMuni(code: string, name: string, dCode: string) {
     const cont = svgContainerRef.current
