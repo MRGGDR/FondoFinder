@@ -43,7 +43,7 @@ function getVisibleMetaChips(r: Top5Result): string[] {
     r.acceso_modelo,
     r.estado_modelo,
     r.periodicidad_modelo,
-  ].filter((v): v is string => Boolean(v) && v.trim().toUpperCase() !== 'N/A')
+  ].filter((v): v is string => typeof v === 'string' && v.trim().toUpperCase() !== 'N/A')
 }
 
 function MetaRow({ label, value, light }: { label: string; value: string | null; light?: boolean }) {
