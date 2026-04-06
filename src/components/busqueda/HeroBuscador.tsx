@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { NavBar } from '@/components/layout/NavBar'
 
 interface HeroBuscadorProps {
+  /**
+   * Texto de búsqueda inicial/controlado (se muestra en el input). Opcional.
+   */
+  query?: string
   onComenzar: () => void
   onReset?: () => void
   /**
@@ -19,6 +23,7 @@ interface HeroBuscadorProps {
 export function HeroBuscador({
   onComenzar,
   onReset,
+  query, // no usado en la UI actual, pero permitido para compatibilidad tipada
   ctaVariant = 'single',
   onBuscadorAvanzado,
   onBuscadorLibre,
