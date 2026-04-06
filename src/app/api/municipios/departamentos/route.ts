@@ -35,7 +35,7 @@ export async function GET() {
     }
 
     return NextResponse.json(
-      { departamentos: [...set].sort((a, b) => a.localeCompare(b, 'es')) },
+      { departamentos: Array.from(set).sort((a, b) => a.localeCompare(b, 'es')) },
       {
         status: 200,
         headers: { 'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400' },
