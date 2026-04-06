@@ -9,6 +9,10 @@ interface HeroBuscadorProps {
    * Texto de búsqueda inicial/controlado (se muestra en el input). Opcional.
    */
   query?: string
+  /**
+   * Callback opcional cuando cambia el texto de búsqueda (compatibilidad con FlujoBuscador).
+   */
+  onQueryChange?: (q: string) => void
   onComenzar: () => void
   onReset?: () => void
   /**
@@ -16,6 +20,10 @@ interface HeroBuscadorProps {
    * triple = tres botones (Guiado, Avanzado, Libre).
    */
   ctaVariant?: 'single' | 'triple'
+  /**
+   * CTA directa para búsqueda libre/avanzada (compatibilidad tipada; no se usa en este componente).
+   */
+  onBusquedaDirecta?: (query: string) => void
   onBuscadorAvanzado?: () => void
   onBuscadorLibre?: () => void
 }
@@ -24,6 +32,8 @@ export function HeroBuscador({
   onComenzar,
   onReset,
   query, // no usado en la UI actual, pero permitido para compatibilidad tipada
+  onQueryChange, // no usado; prop opcional para compatibilidad
+  onBusquedaDirecta, // no usado; prop opcional para compatibilidad
   ctaVariant = 'single',
   onBuscadorAvanzado,
   onBuscadorLibre,
