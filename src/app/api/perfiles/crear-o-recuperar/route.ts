@@ -82,7 +82,9 @@ export async function POST(req: NextRequest) {
     }
 
     // Helper: fetch nombre + departamento del municipio
-    async function fetchMunicipio(id: string | null): Promise<{ nombre: string | null; departamento: string | null }> {
+    const fetchMunicipio = async (
+      id: string | null,
+    ): Promise<{ nombre: string | null; departamento: string | null }> => {
       if (!id) return { nombre: null, departamento: null }
       const { data: mRow } = await db.from('municipios').select('nombre, departamento').eq('id', id).single()
       if (!mRow) return { nombre: null, departamento: null }
