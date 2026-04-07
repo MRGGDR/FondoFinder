@@ -9,6 +9,32 @@ import { UNGRDLoader } from '@/components/ui/UNGRDLoader'
 import { useLoader } from '@/hooks/useLoader'
 import { descargarPDF, descargarPasoPDF } from '@/lib/pdf'
 
+/** Mapeo inline: fondos con ficha PDF estática precargada, indexados por fondo.id */
+const FICHAS_PDF_POR_ID: Record<string, string> = {
+  F17: '/fichas-fondos/adaptation-fund.pdf',
+  F20: '/fichas-fondos/green-climate-fund.pdf',
+  F21: '/fichas-fondos/sccf.pdf',
+  F24: '/fichas-fondos/gfdrr.pdf',
+  F25: '/fichas-fondos/eco-business-fund.pdf',
+  F26: '/fichas-fondos/global-innovation-fund.pdf',
+  F28: '/fichas-fondos/bid-lab.pdf',
+  F29: '/fichas-fondos/iki.pdf',
+  F31: '/fichas-fondos/fontagro.pdf',
+}
+
+async function descargarFichaEstatica(path: string, nombre: string) {
+  const res = await fetch(path)
+  const blob = await res.blob()
+  const url = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = nombre
+  document.body.appendChild(a)
+  a.click()
+  document.body.removeChild(a)
+  URL.revokeObjectURL(url)
+}
+
 interface Props {
   fondo: FondoConRelaciones
 }
@@ -523,9 +549,26 @@ export function FondoDetalle({ fondo }: Props) {
           </button>
 
           {/* Botón paso a paso */}
-          <button
-            disabled={!instructivoLoaded || !instructivo}
-            onClick={async () => {
+          {(() => {
+            const fichaEstatica = FICHAS_PDF_POR_ID[fondo.id] ?? null
+            // eslint-disable-next-line no-console
+            console.log('[PasoAPaso] fondo.id=', fondo.id, '| fichaEstatica=', fichaEstatica)
+            const tieneContenido = fichaEstatica || (instructivoLoaded && !!instructivo)
+            const cargando = !fichaEstatica && !instructivoLoaded
+
+            const handleClick = async () => {
+              if (fichaEstatica) {
+                const nombreArchivo = fichaEstatica.split('/').pop() ?? 'ficha.pdf'
+                mostrarLoader('ficha paso a paso')
+                try {
+                  await descargarFichaEstatica(fichaEstatica, nombreArchivo)
+                } catch (e) {
+                  console.error('Error descargando ficha estática', e)
+                } finally {
+                  ocultarLoader()
+                }
+                return
+              }
               if (!instructivo) return
               mostrarLoader('paso a paso')
               try {
@@ -535,22 +578,35 @@ export function FondoDetalle({ fondo }: Props) {
               } finally {
                 ocultarLoader()
               }
-            }}
-            title={!instructivoLoaded ? 'Cargando...' : !instructivo ? 'Este fondo no tiene un paso a paso definido' : 'Descargar guía paso a paso'}
-            style={{
-              background: instructivoLoaded && instructivo ? '#213362' : '#e5e7eb',
-              color: instructivoLoaded && instructivo ? '#FFCD00' : '#9ca3af',
-              padding: '14px 28px', borderRadius: '12px',
-              fontWeight: 900, fontSize: '14px',
-              border: instructivoLoaded && instructivo ? 'none' : '1px solid #d1d5db',
-              cursor: instructivoLoaded && instructivo ? 'pointer' : 'not-allowed',
-              display: 'flex', alignItems: 'center', gap: '8px',
-              textTransform: 'uppercase', letterSpacing: '0.5px',
-              whiteSpace: 'nowrap',
-              opacity: instructivoLoaded && !instructivo ? 0.6 : 1,
-            }}>
-            {!instructivoLoaded ? '⌛ Paso a Paso' : instructivo ? '⇩ Paso a Paso' : '✕ Paso a Paso'}
-          </button>
+            }
+
+            return (
+              <button
+                disabled={!tieneContenido || cargando}
+                onClick={handleClick}
+                title={
+                  cargando
+                    ? 'Cargando...'
+                    : !tieneContenido
+                    ? 'Este fondo no tiene un paso a paso definido'
+                    : 'Descargar guía paso a paso'
+                }
+                style={{
+                  background: tieneContenido ? '#213362' : '#e5e7eb',
+                  color: tieneContenido ? '#FFCD00' : '#9ca3af',
+                  padding: '14px 28px', borderRadius: '12px',
+                  fontWeight: 900, fontSize: '14px',
+                  border: tieneContenido ? 'none' : '1px solid #d1d5db',
+                  cursor: tieneContenido ? 'pointer' : 'not-allowed',
+                  display: 'flex', alignItems: 'center', gap: '8px',
+                  textTransform: 'uppercase', letterSpacing: '0.5px',
+                  whiteSpace: 'nowrap',
+                  opacity: !tieneContenido && !cargando ? 0.6 : 1,
+                }}>
+                {cargando ? '⌛ Paso a Paso' : tieneContenido ? '⇩ Paso a Paso' : '✕ Paso a Paso'}
+              </button>
+            )
+          })()}
         </div>
 
       </div>

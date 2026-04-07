@@ -5,6 +5,35 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [1.2.0] — 2026-04-07
+
+### Agregado
+
+#### Fichas PDF estáticas en botón "Paso a Paso" — 9 fondos internacionales
+- **`public/fichas-fondos/`** — nueva carpeta con 9 PDFs preformateados listos para descarga directa:
+  - `adaptation-fund.pdf` → F17 Adaptation Fund
+  - `green-climate-fund.pdf` → F20 Green Climate Fund (GCF)
+  - `sccf.pdf` → F21 Special Climate Change Fund (SCCF)
+  - `gfdrr.pdf` → F24 Global Facility for Disaster Reduction and Recovery (GFDRR)
+  - `eco-business-fund.pdf` → F25 eco.business Fund
+  - `global-innovation-fund.pdf` → F26 Global Innovation Fund
+  - `bid-lab.pdf` → F28 Fondo Multilateral de Inversiones (IDB Lab)
+  - `iki.pdf` → F29 International Climate Initiative (IKI)
+  - `fontagro.pdf` → F31 Fontagro
+
+- **`src/config/fichasPDFEstaticas.ts`** — archivo de configuración con el mapeo `patron → path` y función `getFichaEstaticaPath()`; disponible como utilidad reutilizable
+
+### Modificado
+
+#### Botón "Paso a Paso" en detalle de fondo
+- **`src/components/fondos/FondoDetalle.tsx`**
+  - `FICHAS_PDF_POR_ID` — objeto de mapeo inline indexado por `fondo.id` (F17, F20, F21, F24, F25, F26, F28, F29, F31); lookup O(1) sin dependencia de nombres variables
+  - `descargarFichaEstatica()` — función async que hace `fetch` del PDF estático y fuerza descarga via `blob URL`; muestra el loader UNGRD durante la operación
+  - Para los 9 fondos con ficha estática: botón siempre habilitado (azul/amarillo) y descarga el PDF de `public/fichas-fondos/` sin llamar a `fondos_instructivos` ni generar PDF dinámico
+  - Para los demás fondos: comportamiento anterior sin cambios (habilitado solo si tienen registro en `fondos_instructivos`)
+
+---
+
 ## [1.1.0] — 2026-04-06
 
 ### Agregado
