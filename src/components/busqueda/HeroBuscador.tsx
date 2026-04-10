@@ -92,22 +92,22 @@ export function HeroBuscador({
         {/* Stats */}
         <div className="flex items-center justify-center mb-8">
           <div className="text-center px-6">
-            <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">32</div>
+            <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">31</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Fondos</div>
           </div>
           <div className="w-px h-9 bg-white/[0.12]" />
           <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">12</div>
+            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">6</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Nacionales</div>
           </div>
           <div className="w-px h-9 bg-white/[0.12]" />
           <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">5</div>
+            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">8</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Territoriales</div>
           </div>
           <div className="w-px h-9 bg-white/[0.12]" />
           <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">15</div>
+            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">17</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Internacionales</div>
           </div>
         </div>

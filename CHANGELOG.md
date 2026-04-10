@@ -5,6 +5,76 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.0.0] — 2026-04-09
+
+### Resumen
+**Versión 5 — Buscador Ng Wizard (BuscadorNgV5)**. Se reemplaza el motor de búsqueda principal por un flujo guiado de 7 pasos (wizard) que lleva al usuario desde su perfil como actor hasta los fondos filtrados, con resultados ordenados por relevancia y controles de afinación rápida en barra superior. Las rutas legacy se conservan bajo `/buscar-legacy*` para rollback seguro.
+
+### Agregado
+
+#### Motor de búsqueda guiado — BuscadorNgV5
+- **`src/components/buscador-ng/BuscadorNgV5.tsx`** — componente principal `'use client'` con wizard de 7 pasos:
+  - **Paso 1** — ¿Quién eres? Selección de actor (municipio, departamento, ONG, empresa, etc.) con tarjetas de doble columna, fondo azul `#213362` + icono amarillo `#FFCD00` al activar, badge "Activo"
+  - **Paso 2** — ¿Qué tipo de fondo? Nacional / Territorial / Internacional; misma estética de tarjetas que Paso 1 (icono inline, fondo azul seleccionado, badge Activo)
+  - **Paso 3** — Procesos GRD aplicables (multiselección con toggle)
+  - **Paso 4** — Objetivos PNGRD relevantes (multiselección con toggle)
+  - **Paso 5** — Categoría temática (selección única)
+  - **Paso 6** — Actividades específicas (multiselección con toggle)
+  - **Paso 7** — Resultados: lista de fondos ordenada por `score_total` con tarjetas expandidas, indicadores de instructivo/modelo, estado, periodicidad, modalidad, vigencia y monto; barra de filtros rápidos (Estado, Acceso, Periodicidad, Instructivo, Modelo) como píldoras sutiles sobre los resultados
+  - Navegación: botón "Volver" en cada paso, breadcrumb de pasos completados, reseteo completo
+  - Estado wizard: `NgWizardState` con `actorId`, `tipoFondoId`, `procesoIds`, `objetivoIds`, `categoriaId`, `actividadIds`
+
+#### Servicios y tipos del buscador Ng
+- **`src/services/ngBuscador.ts`** — capa de servicios con funciones browserside via `createNgClient()`:
+  - `getNgActores()` — actores desde tabla `ng_actores`
+  - `getNgTiposFondo()` — tipos de fondo desde `ng_tipos_fondo`
+  - `getProcesosGrd()` — procesos GRD desde `ng_procesos_grd`
+  - `getObjetivosPngrd()` — objetivos PNGRD desde `ng_objetivos_pngrd`
+  - `getNgCategorias()` — categorías temáticas desde `ng_categorias`
+  - `getNgActividades()` — actividades desde `ng_actividades`
+  - `getNgVigencias()` — resumen de vigencias desde `ng_vigencias_resumen`
+  - `getNgResumenFlags()` — conteos de instructivos/modelos/montos (`buscar_fondos_narrativo_v2_flags`)
+  - `getNgModeloInfoBatch()` — info de modelos de aplicación en lote
+  - `buscarFondosNg()` — llamada RPC `buscar_fondos_narrativo_v2` con construcción de args y enriquecimiento post-SQL (modelo de aplicación, flags)
+  - Helpers internos: `buildRpcArgs()`, `sanitizeIds()`, `toNumber()`, `toNullableNumber()`
+
+- **`src/types/ng-buscador.ts`** — tipos TypeScript completos: `NgActor`, `NgTipoFondo`, `NgProcesoGrd`, `NgObjetivoPngrd`, `NgCategoria`, `NgActividad`, `NgVigenciaResumen`, `NgResultadoBusqueda`, `NgResumenFlags`, `NgBusquedaFilters`, `NgRpcArgsBase`, `NgWizardState`
+
+- **`src/lib/supabase/ngClient.ts`** — función `createNgClient()` que retorna cliente Supabase con clave anónima para uso en componentes cliente; separado del cliente de servidor
+
+#### API routes
+- **`src/app/api/ng/montos/route.ts`** — `GET /api/ng/montos`; consulta rangos `monto_min_usd`/`monto_max_usd` de la tabla `fondos` usando `getDb()` (service-role); creada para filtro de presupuesto (luego suprimido de la UI)
+
+#### UI auxiliar
+- **`src/components/ui/NavigationLoader.tsx`** — loader de progreso durante navegación entre rutas Next.js
+
+#### Rutas legacy preservadas
+- **`src/app/buscar-legacy/`** — buscador anterior (v4) accesible en `/buscar-legacy`
+- **`src/app/buscar-legacy-narrativo/`** — buscador narrativo anterior accesible en `/buscar-legacy-narrativo`
+- **`src/app/buscar-legacy2/`** — segunda variante legacy preservada
+
+### Modificado
+
+#### Integración en ruta principal `/buscar`
+- **`src/app/buscar/page.tsx`** y **`src/app/buscar/BuscarClient.tsx`** — actualizados para montar `BuscadorNgV5` como buscador activo; la ruta `/buscar` ahora sirve el nuevo wizard
+
+#### HeroBuscador — estadísticas actualizadas
+- **`src/components/busqueda/HeroBuscador.tsx`** — contadores actualizados a los valores reales del catálogo: **31** fondos, **6** nacionales, **8** territoriales, **17** internacionales (antes: 32 / 12 / 5 / 15)
+
+#### Layout y navegación
+- **`src/app/layout.tsx`** — ajustes de integración con el nuevo flujo de navegación
+- **`src/components/layout/AppHeader.tsx`** — actualizado para reflejar la nueva estructura de rutas
+- **`src/components/ui/UNGRDLoader.tsx`** — ajustes menores al loader
+
+### Eliminado / Suprimido de UI
+
+- **Badge "X coincidencias"** en tarjetas de resultados — eliminado del componente `BuscadorNgV5`; el número de coincidencias internas no aportaba valor al usuario final
+- **Filtro de presupuesto** — creado y luego retirado; la API `/api/ng/montos` existe pero la UI no lo expone
+- **Filtro de entidades** — investigado (campo de texto libre sin mapping de keywords); descartado antes de implementarse en UI
+- **Filtro de Vigencia** — retirado de la barra de filtros rápidos
+
+---
+
 ## [1.2.0] — 2026-04-07
 
 ### Agregado

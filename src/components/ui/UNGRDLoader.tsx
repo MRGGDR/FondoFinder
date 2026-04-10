@@ -16,6 +16,7 @@ const MENSAJES = {
   guardando:    { main: 'Guardando cambios',         sub: 'Almacenando la información...' },
   reporte:      { main: 'Generando reporte PDF',     sub: 'Esto puede tomar unos segundos...' },
   buscando:     { main: 'Buscando fondos',           sub: 'Consultando las fuentes disponibles...' },
+  navegando:    { main: 'Cargando página',           sub: 'Un momento por favor...' },
   default:      { main: 'Cargando...',               sub: 'Un momento por favor' },
 }
 
