@@ -644,7 +644,8 @@ export function BuscadorNgV5() {
 
       // Enriquecer con datos de fondos_modelos_aplicacion
       const fondoIds = rows.map(r => r.fondo_id)
-      const modeloMap = await getNgModeloInfoBatch(fondoIds).catch(() => ({}))
+      const modeloMap: Awaited<ReturnType<typeof getNgModeloInfoBatch>> =
+        await getNgModeloInfoBatch(fondoIds).catch(() => ({}))
       const rowsEnriquecidos = rows.map(r => ({
         ...r,
         ...(modeloMap[r.fondo_id] ?? {}),
@@ -1251,9 +1252,15 @@ export function BuscadorNgV5() {
                     const hasInstructivo = flags.fondos_con_instructivo > 0 && flags.fondos_sin_instructivo > 0
                     const hasModelo = flags.fondos_con_modelo_aplicacion > 0 && flags.fondos_sin_modelo_aplicacion > 0
 
-                    const estadoOpciones = [...new Set(resultados.map(r => r.estado_convocatoria).filter(Boolean) as string[])].sort()
-                    const periodicidadOpciones = [...new Set(resultados.map(r => r.periodicidad).filter(Boolean) as string[])].sort()
-                    const accesoOpciones = [...new Set(resultados.map(r => r.acceso_modalidad).filter(Boolean) as string[])].sort()
+                    const estadoOpciones = Array.from(
+                      new Set(resultados.map(r => r.estado_convocatoria).filter(Boolean) as string[])
+                    ).sort()
+                    const periodicidadOpciones = Array.from(
+                      new Set(resultados.map(r => r.periodicidad).filter(Boolean) as string[])
+                    ).sort()
+                    const accesoOpciones = Array.from(
+                      new Set(resultados.map(r => r.acceso_modalidad).filter(Boolean) as string[])
+                    ).sort()
 
                     const hasEstado = estadoOpciones.length > 1
                     const hasPeriodicidad = periodicidadOpciones.length > 1
