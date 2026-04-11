@@ -1,48 +1,59 @@
-/**
+﻿/**
  * GET /api/municipios/departamentos
- *
- * Devuelve la lista de departamentos únicos presentes en public.municipios,
- * ordenados alfabéticamente.
- *
- * Respuesta: { departamentos: string[] }
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDb } from '@/lib/db'
+import { jsonError, jsonOk } from '@/lib/http/apiResponse'
+import { RATE_POLICIES } from '@/lib/http/ratePolicies'
+import { consumeRateLimit } from '@/lib/http/rateLimit'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const rate = consumeRateLimit(req, RATE_POLICIES.municipios)
+  if (!rate.allowed) {
+    return jsonError(429, 'Demasiadas solicitudes. Intenta de nuevo en unos segundos.', {
+      code: 'rate_limited',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
+  }
+
   try {
     const db = getDb()
 
-    // Colombia tiene ~1122 municipios; Supabase PostgREST devuelve máximo 1000 por defecto.
-    // Se hacen dos páginas en paralelo para cubrir todos los registros sin importar max_rows.
     const [res1, res2] = await Promise.all([
       db.from('municipios').select('departamento').order('departamento').range(0, 999),
       db.from('municipios').select('departamento').order('departamento').range(1000, 1999),
     ])
 
-    if (res1.error) {
-      console.error('[/api/municipios/departamentos] página 1', res1.error)
-      return NextResponse.json({ error: 'Error al consultar departamentos' }, { status: 500 })
+    if (res1.error || res2.error) {
+      console.error('[/api/municipios/departamentos]', res1.error ?? res2.error)
+      return jsonError(500, 'Error al consultar departamentos', {
+        code: 'db_query_failed',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
     }
 
     const allRows = [...(res1.data ?? []), ...(res2.data ?? [])]
-
-    // Deduplicate — Supabase no tiene SELECT DISTINCT en el SDK v2
     const set = new Set<string>()
     for (const row of allRows) {
       if (row.departamento) set.add(row.departamento as string)
     }
 
-    return NextResponse.json(
+    return jsonOk(
       { departamentos: Array.from(set).sort((a, b) => a.localeCompare(b, 'es')) },
       {
-        status: 200,
-        headers: { 'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400' },
+        cacheControl: 'public, s-maxage=3600, stale-while-revalidate=86400',
+        extraHeaders: rate.headers,
       },
     )
   } catch (e) {
     console.error('[/api/municipios/departamentos] unexpected', e)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return jsonError(500, 'Error interno', {
+      code: 'internal_error',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   }
 }

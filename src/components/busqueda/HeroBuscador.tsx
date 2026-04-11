@@ -1,28 +1,14 @@
 'use client'
 
 import Image from 'next/image'
-import { useRouter } from 'next/navigation'
 import { NavBar } from '@/components/layout/NavBar'
 
 interface HeroBuscadorProps {
-  /**
-   * Texto de búsqueda inicial/controlado (se muestra en el input). Opcional.
-   */
   query?: string
-  /**
-   * Callback opcional cuando cambia el texto de búsqueda (compatibilidad con FlujoBuscador).
-   */
   onQueryChange?: (q: string) => void
   onComenzar: () => void
   onReset?: () => void
-  /**
-   * Modo de CTA: single = botón único "Comencemos".
-   * triple = tres botones (Guiado, Avanzado, Libre).
-   */
   ctaVariant?: 'single' | 'triple'
-  /**
-   * CTA directa para búsqueda libre/avanzada (compatibilidad tipada; no se usa en este componente).
-   */
   onBusquedaDirecta?: (query: string) => void
   onBuscadorAvanzado?: () => void
   onBuscadorLibre?: () => void
@@ -31,15 +17,13 @@ interface HeroBuscadorProps {
 export function HeroBuscador({
   onComenzar,
   onReset,
-  query, // no usado en la UI actual, pero permitido para compatibilidad tipada
-  onQueryChange, // no usado; prop opcional para compatibilidad
-  onBusquedaDirecta, // no usado; prop opcional para compatibilidad
+  query,
+  onQueryChange,
+  onBusquedaDirecta,
   ctaVariant = 'single',
   onBuscadorAvanzado,
   onBuscadorLibre,
 }: HeroBuscadorProps) {
-  const router = useRouter()
-
   return (
     <>
       <section
@@ -47,7 +31,6 @@ export function HeroBuscador({
         style={{ paddingTop: '72px' }}
         aria-label="Buscador de fondos"
       >
-        {/* Watermark UNGRD */}
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
           <Image
             src="/logo-ungrd-sinfondo.png"
@@ -63,36 +46,41 @@ export function HeroBuscador({
           <NavBar variant="hero" />
         </div>
 
-        {/* Chip */}
-        <div className="inline-flex items-center gap-2 bg-[#FFCD00]/10
+        <div
+          className="inline-flex items-center gap-2 bg-[#FFCD00]/10
           border border-[#FFCD00]/20 text-[#FFCD00] text-[10px] font-bold
-          px-4 py-[5px] rounded-full tracking-[1px] uppercase mb-8">
+          px-4 py-[5px] rounded-full tracking-[1px] uppercase mb-8"
+        >
           <div className="w-[5px] h-[5px] bg-[#FFCD00] rounded-full flex-shrink-0" />
-          UNGRD &middot; Fuentes de Financiamiento
+          Herramienta digital para el financiamiento del PNGRD
         </div>
 
-        {/* Título */}
-        <h1 className="text-[68px] md:text-[80px] font-black text-white
-          text-center leading-[1.05] tracking-[-2px] mb-6">
-          Encuentra el<br />
-          <span className="block text-[80px] md:text-[96px] leading-none
+        <h1
+          className="text-[68px] md:text-[80px] font-black text-white
+          text-center leading-[1.05] tracking-[-2px] mb-6"
+        >
+          Encuentra el
+          <br />
+          <span
+            className="block text-[80px] md:text-[96px] leading-none
             tracking-[-3px] text-[#FFCD00] italic underline
-            decoration-white/15 underline-offset-[8px]">
+            decoration-white/15 underline-offset-[8px]"
+          >
             fondo de financiamiento
           </span>
-          para tu municipio
+          para tu territorio
         </h1>
 
-        {/* Subtítulo */}
-        <p className="text-white/50 text-base md:text-lg font-normal
-          leading-relaxed max-w-[520px] mb-8">
+        <p
+          className="text-white/50 text-base md:text-lg font-normal
+          leading-relaxed max-w-[520px] mb-8"
+        >
           Identifica en minutos qué fondo financia tu proyecto de gestión del riesgo.
         </p>
 
-        {/* Stats */}
         <div className="flex items-center justify-center mb-8">
           <div className="text-center px-6">
-            <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">31</div>
+            <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">33</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Fondos</div>
           </div>
           <div className="w-px h-9 bg-white/[0.12]" />
@@ -107,12 +95,11 @@ export function HeroBuscador({
           </div>
           <div className="w-px h-9 bg-white/[0.12]" />
           <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">17</div>
+            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">19</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Internacionales</div>
           </div>
         </div>
 
-        {/* CTA */}
         <div className="flex flex-col items-center gap-3">
           {ctaVariant === 'single' && (
             <>
@@ -122,7 +109,8 @@ export function HeroBuscador({
                   px-14 py-4 rounded-[14px] uppercase tracking-[1px]
                   shadow-[0_8px_32px_rgba(255,205,0,0.25)]
                   hover:brightness-110 hover:scale-[1.02]
-                  active:scale-95 transition-all">
+                  active:scale-95 transition-all"
+              >
                 {'Comencemos →'}
               </button>
               {onReset && (
@@ -139,7 +127,6 @@ export function HeroBuscador({
 
           {ctaVariant === 'triple' && (
             <div className="flex flex-col sm:flex-row items-center gap-4">
-              {/* Buscador Guiado */}
               <button
                 onClick={onComenzar}
                 className="group flex flex-col items-center gap-1.5 bg-[#FFCD00] text-[#213362]
@@ -155,7 +142,6 @@ export function HeroBuscador({
                 </span>
               </button>
 
-              {/* Buscador Avanzado */}
               <button
                 onClick={onBuscadorAvanzado ?? (() => {})}
                 className="group flex flex-col items-center gap-1.5 bg-white/10 text-white
@@ -172,11 +158,8 @@ export function HeroBuscador({
               </button>
             </div>
           )}
-
-
         </div>
 
-        {/* Franja tricolor Colombia fija en la base del hero */}
         <div
           aria-hidden="true"
           className="pointer-events-none absolute bottom-0 left-0 right-0 h-[14px] md:h-[16px] lg:h-[18px] z-30"
@@ -186,9 +169,7 @@ export function HeroBuscador({
             boxShadow: '0 -4px 14px rgba(0,0,0,0.14)',
           }}
         />
-
       </section>
-
     </>
   )
 }

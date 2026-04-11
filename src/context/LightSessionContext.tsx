@@ -10,6 +10,7 @@ import {
 
 interface LightSessionState {
   perfil: PerfilLocal | null
+  esAdmin: boolean
   abrirModal: () => void
   cerrarModal: () => void
   modalAbierto: boolean
@@ -22,6 +23,7 @@ const LightSessionContext = createContext<LightSessionState | null>(null)
 export function LightSessionProvider({ children }: { children: ReactNode }) {
   const [perfil, setPerfil] = useState<PerfilLocal | null>(null)
   const [modalAbierto, setModalAbierto] = useState(false)
+  const esAdmin = perfil?.es_admin === true
 
   // Al montar en el cliente: verificar localStorage
   useEffect(() => {
@@ -58,6 +60,7 @@ export function LightSessionProvider({ children }: { children: ReactNode }) {
   return (
     <LightSessionContext.Provider value={{
       perfil,
+      esAdmin,
       abrirModal,
       cerrarModal,
       modalAbierto,

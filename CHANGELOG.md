@@ -5,6 +5,152 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.1.0] - 2026-04-11
+
+### Resumen
+Se consolida el cierre de la version V5 limpia del proyecto con foco en cuatro frentes:
+1. simplificacion del repositorio para dejar una sola base activa (V5)
+2. hardening de API y control de acceso admin del lado servidor
+3. estabilizacion del wizard de busqueda NG frente a cancelaciones y condiciones de carrera
+4. endurecimiento operativo para arranque local y despliegue final
+
+El objetivo de esta version es dejar el repositorio listo para validacion final en Vercel y promocion segura de rama productiva sin push destructivo sobre la principal actual.
+
+### Agregado
+
+#### Documentacion de cierre y seguridad
+- `MIGRACION_V5_FINAL.md`
+  - inventario de arquitectura final V5
+  - listado de rutas, componentes y servicios preservados
+  - listado detallado de removidos legacy
+  - validaciones ejecutadas (lint, typecheck, build, verificacion de RPC y tablas)
+- `SECURITY_HARDENING_V5.md`
+  - politica de hardening aplicada al buscador V5
+  - matriz de superficie HTTP
+  - politicas de rate limit por endpoint
+  - checklist pre-deploy para Vercel
+  - riesgo residual documentado
+- `Documentacion_de_seguridad_aplicadaV5.md`
+  - registro operativo de medidas efectivas aplicadas en Supabase y app
+
+#### Capa HTTP endurecida
+- `src/lib/http/apiResponse.ts`
+  - respuesta JSON uniforme para OK y error
+  - headers de seguridad base (`X-Content-Type-Options`, `Referrer-Policy`)
+- `src/lib/http/clientIp.ts`
+  - resolucion defensiva de IP cliente para rate limiting
+- `src/lib/http/rateLimit.ts`
+  - limitador in-memory best-effort con headers estandar
+  - soporte `Retry-After`
+- `src/lib/http/ratePolicies.ts`
+  - politicas centralizadas por endpoint
+- `src/lib/http/validation.ts`
+  - parser JSON con limite de bytes
+  - validadores de UUID, enteros, arreglos y texto
+  - errores de validacion consistentes
+
+#### Flujo admin ligero con validacion server-side
+- `src/lib/adminAccess.ts`
+  - normalizacion del codigo admin
+  - lectura server-side de `ADMIN_ACCESS_CODE`
+  - helpers de headers para requests admin
+- `src/lib/adminGuardServer.ts`
+  - autorizacion admin via headers + DB + env server-side
+  - rate limit en rutas de analytics admin
+- `src/components/admin/AdminAccessGuard.tsx`
+  - guard visual para rutas admin en cliente
+- `src/components/admin/MapaAdminDashboard.tsx`
+  - dashboard territorial admin con mapa, KPIs, detalle y actividad reciente
+- `src/app/api/admin/analytics/usuarios-mapa/route.ts`
+  - endpoint de usuarios registrados por municipio/departamento
+
+#### Trazabilidad operativa de busqueda
+- `src/app/api/ng/evento-busqueda/route.ts`
+  - registro server-side de eventos de busqueda NG
+  - validacion de payload y rate limit
+
+#### Arranque local robusto en Windows
+- `scripts/readlink-eisdir-workaround.cjs`
+  - workaround para `EISDIR` en `fs.readlink` bajo entornos Windows
+
+### Modificado
+
+#### Endurecimiento de rutas API existentes
+- `src/app/api/perfiles/crear-o-recuperar/route.ts`
+- `src/app/api/perfiles/recuperar-por-codigo/route.ts`
+- `src/app/api/perfiles/actualizar/route.ts`
+- `src/app/api/ng/montos/route.ts`
+- `src/app/api/feedback/route.ts`
+- `src/app/api/municipios/departamentos/route.ts`
+- `src/app/api/municipios/por-departamento/route.ts`
+- `src/app/api/mapa/fondos-territorio/route.ts`
+- `src/app/api/fondos/[id]/instructivo/route.ts`
+- `src/app/api/admin/analytics/kpis/route.ts`
+- `src/app/api/admin/analytics/mapa-origen/route.ts`
+- `src/app/api/admin/analytics/territorio/route.ts`
+
+Cambios transversales aplicados:
+- validacion de entradas con utilidades comunes
+- respuestas de error normalizadas sin exponer detalle interno de BD
+- cache-control especifico por tipo de endpoint
+- limites de tasa por ruta
+
+#### Sesion ligera y propagacion admin
+- `src/lib/lightSession.ts`
+  - soporte persistente para `es_admin`
+  - normalizacion defensiva al leer localStorage
+- `src/context/LightSessionContext.tsx`
+  - exposicion de `esAdmin` derivado de perfil local
+- `src/components/layout/NavBar.tsx`
+  - visibilidad de `Mapa` y `Admin` condicionada por `esAdmin`
+- `src/app/mapa/page.tsx`
+  - acceso condicionado por sesion admin
+- `src/app/admin/page.tsx`
+  - acceso encapsulado por guard admin
+
+#### Admin code solo en servidor
+- `src/lib/adminAccess.ts`
+  - se elimina dependencia de variable publica para control admin
+  - validacion contra `ADMIN_ACCESS_CODE` (server-side)
+- `.env.example`
+  - entorno orientado a `ADMIN_ACCESS_CODE` como fuente canonica del acceso admin
+
+#### Estabilidad del wizard NG (AbortError / race conditions)
+- `src/services/ngBuscador.ts`
+  - clasificador de errores tipo abort (incluye variantes de mensaje)
+  - dedupe condicional: no compartir promesa cuando hay `AbortSignal`
+  - conversion de abort esperado a `AbortError` uniforme
+  - cache temporal para catalogos estaticos
+- `src/components/buscador-ng/BuscadorNgV5.tsx`
+  - manejo consistente de cancelaciones sin contaminar estado de error
+  - control de `loadingResultados` atado al request activo
+  - abort explicito de request previo en nuevas busquedas
+  - mitigacion de condiciones de carrera en efectos encadenados
+
+#### Arranque y tareas locales
+- `start-all.js`
+  - flujo de inicio mas robusto para entorno local
+  - soporte de modos de verificacion y arranque
+  - compatibilidad reforzada para Windows
+
+### Eliminado / Consolidado
+
+#### Limpieza de legado para dejar una sola base activa
+Se consolidan remociones de rutas y componentes legacy que mantenian acoplamiento historico o duplicidad funcional. Entre los bloques eliminados:
+- rutas de buscadores legacy (`/buscar-legacy*`, endpoints narrativos antiguos)
+- utilidades UI no usadas por V5 final
+- componentes de flujos narrativos previos y top5 historico
+- integraciones antiguas de auth/session no usadas por la sesion ligera actual
+
+La version activa del repositorio queda centrada en el flujo V5 guiado y su capa API asociada.
+
+### Operacion recomendada posterior a esta version
+- validar rama final en preview de Vercel
+- confirmar checklist de `SECURITY_HARDENING_V5.md`
+- promover rama validada a principal mediante cambio controlado de rama por defecto y merge sin force push sobre la principal vigente
+
+---
+
 ## [5.0.0] — 2026-04-09
 
 ### Resumen

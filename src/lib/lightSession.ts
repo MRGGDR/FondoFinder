@@ -14,6 +14,7 @@ const MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000 // 7 días
 export interface PerfilLocal {
   perfil_id: string
   codigo_acceso: string
+  es_admin: boolean
   nombre_contacto: string | null
   municipio_id: string | null
   nombre_municipio: string | null
@@ -29,9 +30,20 @@ export function leerPerfilLocal(): PerfilLocal | null {
   try {
     const raw = localStorage.getItem(STORAGE_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as PerfilLocal
+    const parsed = JSON.parse(raw) as Partial<PerfilLocal>
     if (!parsed.perfil_id || !parsed.codigo_acceso) return null
-    return parsed
+    return {
+      perfil_id: parsed.perfil_id,
+      codigo_acceso: parsed.codigo_acceso,
+      es_admin: parsed.es_admin === true,
+      nombre_contacto: parsed.nombre_contacto ?? null,
+      municipio_id: parsed.municipio_id ?? null,
+      nombre_municipio: parsed.nombre_municipio ?? null,
+      departamento: parsed.departamento ?? null,
+      tipo_actor: parsed.tipo_actor ?? null,
+      entidad: parsed.entidad ?? null,
+      guardado_en: parsed.guardado_en ?? 0,
+    }
   } catch {
     return null
   }
@@ -75,6 +87,7 @@ export function respuestaAPerfilLocal(
   resp: {
     perfil_id: string
     codigo_acceso: string
+    es_admin?: boolean | null
     nombre_contacto?: string | null
     municipio_id?: string | null
     nombre_municipio?: string | null
@@ -86,6 +99,7 @@ export function respuestaAPerfilLocal(
   return persistirPerfilLocal({
     perfil_id:       resp.perfil_id,
     codigo_acceso:   resp.codigo_acceso,
+    es_admin:        resp.es_admin === true,
     nombre_contacto: resp.nombre_contacto ?? null,
     municipio_id:    resp.municipio_id ?? null,
     nombre_municipio: resp.nombre_municipio ?? null,

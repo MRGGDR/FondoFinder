@@ -18,49 +18,68 @@
  *   La implementación actual usa el count total de la tabla (suficiente para KPIs admin).
  */
 
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
+import { authorizeAdminRequest } from '@/lib/adminGuardServer'
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  const noStore = { 'Cache-Control': 'no-store' }
   try {
+    const auth = await authorizeAdminRequest(req)
+    if (!auth.ok) {
+      return NextResponse.json({ error: auth.error }, { status: auth.status, headers: noStore })
+    }
+
     const db = getDb()
 
-    // Paralelo: usuarios, búsquedas totales, mapa origen (para contar municipios/depts), top fondos, última actividad
-    const [perfilesRes, searchesRes, mapaOrigenRes, topFondosRes, ultimaActividadRes] =
+    // Paralelo: usuarios, búsquedas totales, municipios activos, top fondos, última actividad
+    const [perfilesRes, searchesRes, searchMunisRes, topFondosRes, ultimaActividadRes] =
       await Promise.all([
         db
           .from('perfiles_consulta')
-          .select('id', { count: 'exact', head: true })
-          .eq('activo', true),
-        db
-          .from('search_events')
           .select('id', { count: 'exact', head: true }),
-        // Obtener todos los territorios con actividad (para contar municipios y depts)
         db
-          .from('vw_busquedas_por_municipio_origen_v2')
-          .select('*'),
+          .from('ng_search_events')
+          .select('id', { count: 'exact', head: true }),
+        // Obtener municipio_origen_id de todos los eventos para contar municipios y depts únicos
+        db
+          .from('ng_search_events')
+          .select('municipio_origen_id')
+          .not('municipio_origen_id', 'is', null),
         db
           .from('vw_top_fondos_consultados_v2')
           .select('*')
           .order('total_apariciones', { ascending: false })
           .limit(8),
         db
-          .from('search_events')
+          .from('ng_search_events')
           .select('created_at')
           .order('created_at', { ascending: false })
           .limit(1),
       ])
 
-    // Contar departamentos únicos desde los datos del mapa
-    const mapaRows = (mapaOrigenRes.data ?? []) as Array<Record<string, unknown>>
-    const departamentosSet = new Set<string>()
-    for (const row of mapaRows) {
-      const dept = (row.departamento ?? row.codigo_departamento ?? '') as string
-      if (dept) departamentosSet.add(dept)
-    }
+    // Distinct municipios activos
+    const allMuniIds = Array.from(new Set(
+      ((searchMunisRes.data ?? []) as Array<{ municipio_origen_id: string | null }>)
+        .map(r => r.municipio_origen_id)
+        .filter(Boolean) as string[]
+    ))
+    const municipiosActivos = allMuniIds.length
 
-    const municipiosActivos = mapaRows.length
-    const departamentosActivos = departamentosSet.size
+    // Departamentos activos: query municipios para obtener codigo_departamento
+    let departamentosActivos = 0
+    if (allMuniIds.length > 0) {
+      const { data: muniRows } = await db
+        .from('municipios')
+        .select('codigo_departamento')
+        .in('id', allMuniIds)
+      const deptSet = new Set(
+        ((muniRows ?? []) as Array<{ codigo_departamento: string | null }>)
+          .map(m => m.codigo_departamento)
+          .filter(Boolean) as string[]
+      )
+      departamentosActivos = deptSet.size
+    }
 
     const ultimaActividad =
       (ultimaActividadRes.data?.[0] as { created_at?: string } | undefined)?.created_at ?? null
@@ -72,9 +91,9 @@ export async function GET() {
       departamentos_activos: departamentosActivos,
       top_fondos: topFondosRes.data ?? [],
       ultima_actividad: ultimaActividad,
-    })
+    }, { headers: noStore })
   } catch (e) {
     console.error('[/api/admin/analytics/kpis]', e)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return NextResponse.json({ error: 'Error interno' }, { status: 500, headers: noStore })
   }
 }

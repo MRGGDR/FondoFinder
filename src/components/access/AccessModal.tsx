@@ -2,12 +2,12 @@
 /**
  * AccessModal
  *
- * Modal de identificación ligera de FondosFinder.
+ * Modal de identificación ligera de la herramienta.
  * Aparece cuando el usuario no tiene perfil válido en localStorage.
  * NO usa Supabase Auth ni contraseñas.
  *
  * Flujos:
- *   A. "Ya tengo código" → recuperar perfil por código de acceso FF-XXXX
+ *   A. "Ya tengo usuario" → recuperar perfil por usuario m.rey
  *   B. "Es mi primera vez" → crear perfil ligero con datos mínimos
  *   C. Confirmación → mostrar código al usuario recién registrado
  */
@@ -37,6 +37,9 @@ const TIPO_ACTOR_OPCIONES = [
   { value: 'academia',           label: 'Academia / Universidad' },
   { value: 'otro',               label: 'Otro' },
 ]
+
+let cachedDepartamentos: string[] | null = null
+const cachedMunicipiosByDep = new Map<string, { id: string; nombre: string }[]>()
 
 /* ─────────────────────────────────────────────
    HELPERS
@@ -109,8 +112,8 @@ function FlujoCodigo({
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const trimmed = codigo.trim().toUpperCase()
-    if (!trimmed) { setError('Ingresa tu código de acceso.'); return }
+    const trimmed = codigo.trim()
+    if (!trimmed) { setError('Ingresa tu usuario.'); return }
     setCargando(true)
     setError(null)
     try {
@@ -121,13 +124,13 @@ function FlujoCodigo({
       })
       if (!res.ok) {
         const body = await res.json().catch(() => ({})) as { error?: string }
-        throw new Error(body.error ?? 'Código no encontrado.')
+        throw new Error(body.error ?? 'Usuario no encontrado.')
       }
       const data = await res.json()
       const perfil = respuestaAPerfilLocal(data)
       onConfirmado(perfil)
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'No se pudo verificar el código.')
+      setError(e instanceof Error ? e.message : 'No se pudo verificar el usuario.')
     } finally {
       setCargando(false)
     }
@@ -136,18 +139,18 @@ function FlujoCodigo({
   return (
     <form onSubmit={handleSubmit} className="flex flex-col gap-5">
       <div>
-        <h2 className="text-xl font-black text-[#213362] leading-tight">Ya tengo código de acceso</h2>
+        <h2 className="text-xl font-black text-[#213362] leading-tight">Ya tengo usuario</h2>
         <p className="text-sm text-gray-400 mt-1">
-          Usa el código que recibiste al registrarte por primera vez.
+          Usa tu usuario registrado para recuperar tu perfil.
         </p>
       </div>
 
       <InputField
-        label="Código de acceso"
+        label="Usuario"
         id="codigo_acceso"
         value={codigo}
         onChange={v => { setCodigo(v); setError(null) }}
-        placeholder="FF-XXXX"
+        placeholder="m.rey"
         required
         autoFocus
       />
@@ -201,25 +204,57 @@ function FlujoRegistro({
 
   // Cargar lista de departamentos al montar
   useEffect(() => {
+    if (cachedDepartamentos) {
+      setDepartamentos(cachedDepartamentos)
+      return
+    }
+
+    const controller = new AbortController()
     setCargandoDepts(true)
-    fetch('/api/municipios/departamentos')
+    fetch('/api/municipios/departamentos', { signal: controller.signal })
       .then(r => r.json())
-      .then((d: { departamentos?: string[] }) => setDepartamentos(d.departamentos ?? []))
+      .then((d: { departamentos?: string[] }) => {
+        const rows = d.departamentos ?? []
+        cachedDepartamentos = rows
+        setDepartamentos(rows)
+      })
       .catch(() => { /* ignorar */ })
       .finally(() => setCargandoDepts(false))
+
+    return () => {
+      controller.abort()
+    }
   }, [])
 
   // Cargar municipios cuando cambia el departamento
   useEffect(() => {
     if (!departamento) { setMunicipiosLista([]); setMunicipioId(''); setMunicipioNombre(''); return }
+    const cached = cachedMunicipiosByDep.get(departamento)
+    if (cached) {
+      setMunicipiosLista(cached)
+      setMunicipioId('')
+      setMunicipioNombre('')
+      return
+    }
+
+    const controller = new AbortController()
     setCargandoMunis(true)
-    fetch(`/api/municipios/por-departamento?dep=${encodeURIComponent(departamento)}`)
+    fetch(`/api/municipios/por-departamento?dep=${encodeURIComponent(departamento)}`, {
+      signal: controller.signal,
+    })
       .then(r => r.json())
-      .then((d: { municipios?: { id: string; nombre: string }[] }) => setMunicipiosLista(d.municipios ?? []))
+      .then((d: { municipios?: { id: string; nombre: string }[] }) => {
+        const rows = d.municipios ?? []
+        cachedMunicipiosByDep.set(departamento, rows)
+        setMunicipiosLista(rows)
+      })
       .catch(() => setMunicipiosLista([]))
       .finally(() => setCargandoMunis(false))
     setMunicipioId('')
     setMunicipioNombre('')
+    return () => {
+      controller.abort()
+    }
   }, [departamento])
 
   function handleMunicipioChange(id: string) {
@@ -276,11 +311,11 @@ function FlujoRegistro({
       <div>
         <h2 className="text-xl font-black text-[#213362] leading-tight">Es mi primera vez</h2>
         <p className="text-sm text-gray-400 mt-1">
-          Completa estos datos para generar tu acceso personal.
+          Completa estos datos para generar tu usuario.
         </p>
       </div>
 
-      <InputField label="Nombre" id="nombre" value={nombre} onChange={setNombre} placeholder="Tu nombre o el de tu equipo" required autoFocus />
+      <InputField label="Nombre y Apellido" id="nombre" value={nombre} onChange={setNombre} placeholder="Tu nombre o el de tu equipo" required autoFocus />
 
       <SelectField
         label="Tipo de actor"
@@ -385,18 +420,18 @@ function FlujoCConfirmacion({
       </div>
 
       <div>
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Acceso creado</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Usuario creado</p>
         <h2 className="text-xl font-black text-[#213362] leading-tight">
-          Bienvenido{perfil.nombre_contacto ? `, ${perfil.nombre_contacto.split(' ')[0]}` : ''}
+          Bienvenido a la herramienta
         </h2>
         <p className="text-sm text-gray-400 mt-1">
-          Tu acceso a FondosFinder está listo.
+          Tu acceso a la herramienta está listo.
         </p>
       </div>
 
       {/* Código destacado */}
       <div className="bg-[#f6fafe] border border-[#213362]/15 rounded-2xl px-6 py-5">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Tu código de acceso</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-2">Tu usuario</p>
         <div className="flex items-center justify-center gap-3">
           <span className="text-3xl font-black text-[#213362] tracking-widest font-mono">
             {perfil.codigo_acceso}
@@ -404,7 +439,7 @@ function FlujoCConfirmacion({
           <button
             type="button"
             onClick={copiar}
-            title="Copiar código"
+            title="Copiar usuario"
             className="p-2 rounded-lg bg-white border border-gray-200 hover:bg-gray-50 transition-colors"
           >
             {copiado ? (
@@ -419,7 +454,7 @@ function FlujoCConfirmacion({
           </button>
         </div>
         <p className="text-xs text-gray-400 mt-3 leading-relaxed">
-          Guarda este código para identificarte desde otro dispositivo.<br />
+          Guarda este usuario para identificarte desde otro dispositivo.<br />
           Es tu única forma de recuperar tu perfil.
         </p>
       </div>
@@ -429,7 +464,7 @@ function FlujoCConfirmacion({
         onClick={onContinuar}
         className="w-full py-3 rounded-xl bg-[#213362] text-white font-bold text-sm hover:bg-[#1B4472] transition-colors"
       >
-        Continuar a FondosFinder →
+        Accede a la herramienta →
       </button>
     </div>
   )
@@ -448,12 +483,12 @@ function FlujoSeleccion({
   return (
     <div className="flex flex-col gap-6">
       <div className="text-center">
-        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">FondosFinder</p>
+        <p className="text-xs font-bold text-gray-400 uppercase tracking-wide mb-1">Herramienta</p>
         <h2 className="text-2xl font-black text-[#213362] leading-tight">
-          Identifica tu acceso
+          Identifica tu usuario
         </h2>
         <p className="text-sm text-gray-400 mt-2">
-          Para usar FondosFinder necesitas un perfil ligero de acceso.<br />
+          Para usar la herramienta necesitas un perfil ligero de acceso.<br />
           Solo toma unos segundos.
         </p>
       </div>
@@ -471,9 +506,9 @@ function FlujoSeleccion({
             </svg>
           </div>
           <div>
-            <p className="font-black text-[#213362] group-hover:text-white text-sm transition-colors">Ya tengo código de acceso</p>
+            <p className="font-black text-[#213362] group-hover:text-white text-sm transition-colors">Ya tengo usuario</p>
             <p className="text-xs text-gray-400 group-hover:text-white/70 mt-0.5 transition-colors">
-              Ingresa tu código FF-XXXX para recuperar tu perfil
+              Ingresa tu usuario (ej. m.rey) para recuperar tu perfil
             </p>
           </div>
         </button>
@@ -558,7 +593,7 @@ export default function AccessModal({ onConfirmado }: AccessModalProps) {
             <div className="flex justify-center mb-6">
               <Image
                 src="/logo-ungrd.png"
-                alt="UNGRD — FondosFinder"
+                alt="UNGRD — Herramienta"
                 width={140}
                 height={44}
                 style={{ objectFit: 'contain' }}

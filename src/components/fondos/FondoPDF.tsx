@@ -315,7 +315,7 @@ export function FondoPDF({ fondo, municipio, instructivo }: Props) {
   return (
     <Document
       title={fondo.nombre}
-      author="UNGRD - FondosFinder"
+      author="UNGRD - Herramienta"
       subject="Reporte de Fuente de Financiamiento"
     >
       <Page size="A4" style={S.page}>
@@ -535,7 +535,7 @@ export function FondoPDF({ fondo, municipio, instructivo }: Props) {
           {/* Barra oscura */}
           <View style={S.footerBar}>
             <Text style={S.footerLeft}>www.gestiondelriesgo.gov.co</Text>
-            <Text style={S.footerRight}>FondosFinder — UNGRD  {new Date().getFullYear()}</Text>
+            <Text style={S.footerRight}>Herramienta — UNGRD  {new Date().getFullYear()}</Text>
           </View>
         </View>
 

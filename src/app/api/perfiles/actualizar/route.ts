@@ -1,39 +1,49 @@
-/**
+﻿/**
  * PATCH /api/perfiles/actualizar
- *
- * Actualiza campos editables de un perfil de consulta existente.
- * Identificado por perfil_id (UUID del localStorage).
- *
- * No requiere autenticación fuerte — los perfil_id son UUIDs no adivinables.
- * Los datos almacenados son preferencias de consulta, no información sensible.
- *
- * Payload (ActualizarPerfilPayload):
- *   perfil_id (requerido), municipio_id?, tipo_actor?, entidad?
- *
- * Respuesta: PerfilConsultaRespuesta
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDb } from '@/lib/db'
-import type { ActualizarPerfilPayload, PerfilConsultaRespuesta } from '@/types/database'
+import { jsonError, jsonOk } from '@/lib/http/apiResponse'
+import { RATE_POLICIES } from '@/lib/http/ratePolicies'
+import { consumeRateLimit } from '@/lib/http/rateLimit'
+import {
+  ValidationError,
+  asOptionalString,
+  asOptionalUuid,
+  ensureObject,
+  parseJsonBody,
+} from '@/lib/http/validation'
+import { isAdminAccessCodeServer } from '@/lib/adminAccess'
 
 export async function PATCH(req: NextRequest) {
   try {
-    const body: ActualizarPerfilPayload = await req.json()
+    const body = ensureObject(await parseJsonBody(req, { maxBytes: 8192 }))
 
-    const { perfil_id, municipio_id, tipo_actor, entidad } = body
-
-    if (!perfil_id || typeof perfil_id !== 'string') {
-      return NextResponse.json({ error: 'perfil_id es requerido' }, { status: 400 })
+    const perfil_id = asOptionalUuid(body.perfil_id)
+    if (!perfil_id) {
+      throw new ValidationError('perfil_id es requerido')
     }
 
-    // Construir solo los campos que vienen en el payload
+    const municipio_id = body.municipio_id === null ? null : asOptionalUuid(body.municipio_id)
+    const tipo_actor = body.tipo_actor === null ? null : asOptionalString(body.tipo_actor, { maxLen: 60 })
+    const entidad = body.entidad === null ? null : asOptionalString(body.entidad, { maxLen: 160 })
+
+    const rate = consumeRateLimit(req, RATE_POLICIES.perfilesActualizar, [perfil_id])
+    if (!rate.allowed) {
+      return jsonError(429, 'Demasiadas solicitudes. Intenta de nuevo mas tarde.', {
+        code: 'rate_limited',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
+    }
+
     const updates: Record<string, unknown> = {
       last_seen_at: new Date().toISOString(),
     }
-    if (municipio_id !== undefined) updates.municipio_id = municipio_id
-    if (tipo_actor   !== undefined) updates.tipo_actor   = tipo_actor
-    if (entidad      !== undefined) updates.entidad      = entidad
+    if (body.municipio_id !== undefined) updates.municipio_id = municipio_id
+    if (body.tipo_actor !== undefined) updates.tipo_actor = tipo_actor
+    if (body.entidad !== undefined) updates.entidad = entidad
 
     const db = getDb()
 
@@ -47,13 +57,11 @@ export async function PATCH(req: NextRequest) {
 
     if (error || !data) {
       console.error('[/api/perfiles/actualizar]', error)
-      return NextResponse.json(
-        {
-          error: 'No se pudo actualizar el perfil',
-          detail: process.env.NODE_ENV !== 'production' ? error?.message : undefined,
-        },
-        { status: 404 },
-      )
+      return jsonError(404, 'No se pudo actualizar el perfil', {
+        code: 'profile_not_found_or_update_failed',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
     }
 
     const p = data as {
@@ -65,7 +73,6 @@ export async function PATCH(req: NextRequest) {
       entidad: string | null
     }
 
-    // Fetch nombre del municipio si existe para devolverlo al cliente
     let nombre_municipio: string | null = null
     let departamento: string | null = null
     if (p.municipio_id) {
@@ -80,25 +87,37 @@ export async function PATCH(req: NextRequest) {
       }
     }
 
-    const respuesta: PerfilConsultaRespuesta & {
-      entidad: string | null
-      nombre_municipio: string | null
-      departamento: string | null
-    } = {
-      perfil_id: p.id,
-      codigo_acceso: p.codigo_acceso,
-      nombre_contacto: p.nombre_contacto,
-      municipio_id: p.municipio_id,
-      tipo_actor: p.tipo_actor,
-      entidad: p.entidad,
-      nombre_municipio,
-      departamento,
-      es_nuevo: false,
+    return jsonOk(
+      {
+        perfil_id: p.id,
+        codigo_acceso: p.codigo_acceso,
+        es_admin: isAdminAccessCodeServer(p.codigo_acceso),
+        nombre_contacto: p.nombre_contacto,
+        municipio_id: p.municipio_id,
+        tipo_actor: p.tipo_actor,
+        entidad: p.entidad,
+        nombre_municipio,
+        departamento,
+        es_nuevo: false,
+      },
+      {
+        status: 200,
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      },
+    )
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      return jsonError(400, e.message, {
+        code: 'invalid_input',
+        cacheControl: 'no-store',
+      })
     }
 
-    return NextResponse.json(respuesta, { status: 200 })
-  } catch (e) {
     console.error('[/api/perfiles/actualizar] error', e)
-    return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 })
+    return jsonError(400, 'Solicitud invalida', {
+      code: 'invalid_request',
+      cacheControl: 'no-store',
+    })
   }
 }

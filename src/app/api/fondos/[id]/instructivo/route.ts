@@ -1,33 +1,40 @@
-/**
+﻿/**
  * GET /api/fondos/[id]/instructivo
- *
- * Devuelve la ficha paso a paso del fondo desde fondos_instructivos.
- * Incluye pasos_json, requisitos_json y checklist_documentos.
- *
- * Devuelve 404 si el fondo no tiene instructivo registrado.
- *
- * MIGRACIÓN A POSTGRESQL PURO:
- *   Reemplazar .from('fondos_instructivos') por:
- *     SELECT * FROM public.fondos_instructivos WHERE fondo_id = $1
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDb } from '@/lib/db'
+import { jsonError, jsonOk } from '@/lib/http/apiResponse'
+import { RATE_POLICIES } from '@/lib/http/ratePolicies'
+import { consumeRateLimit } from '@/lib/http/rateLimit'
+
+const FONDO_ID_RE = /^[a-zA-Z0-9._:-]{1,80}$/
 
 export async function GET(
-  _req: NextRequest,
-  { params }: { params: { id: string } }
+  req: NextRequest,
+  { params }: { params: { id: string } },
 ) {
-  const { id } = params
+  const rate = consumeRateLimit(req, RATE_POLICIES.fondosInstructivo)
+  if (!rate.allowed) {
+    return jsonError(429, 'Demasiadas solicitudes. Intenta de nuevo en unos segundos.', {
+      code: 'rate_limited',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
+  }
 
-  if (!id || typeof id !== 'string') {
-    return NextResponse.json({ error: 'id es requerido' }, { status: 400 })
+  const id = params.id?.trim()
+  if (!id || !FONDO_ID_RE.test(id)) {
+    return jsonError(400, 'id invalido', {
+      code: 'invalid_id',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   }
 
   try {
     const db = getDb()
 
-    // MIGRATION NOTE: SELECT * FROM public.fondos_instructivos WHERE fondo_id = $1
     const { data, error } = await db
       .from('fondos_instructivos')
       .select('*')
@@ -36,19 +43,30 @@ export async function GET(
 
     if (error || !data) {
       if (error?.code === 'PGRST116') {
-        return NextResponse.json({ error: 'Este fondo no tiene instructivo registrado' }, { status: 404 })
+        return jsonError(404, 'Este fondo no tiene instructivo registrado', {
+          code: 'not_found',
+          cacheControl: 'public, s-maxage=300, stale-while-revalidate=900',
+          extraHeaders: rate.headers,
+        })
       }
-      console.error(`[/api/fondos/${id}/instructivo]`, error?.message)
-      return NextResponse.json({ error: 'Error al obtener el instructivo' }, { status: 500 })
+      console.error(`[/api/fondos/${id}/instructivo]`, error)
+      return jsonError(500, 'Error al obtener el instructivo', {
+        code: 'db_query_failed',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
     }
 
-    return NextResponse.json(data, {
-      headers: {
-        'Cache-Control': 'public, s-maxage=600, stale-while-revalidate=3600',
-      },
+    return jsonOk(data as Record<string, unknown>, {
+      cacheControl: 'public, s-maxage=600, stale-while-revalidate=3600',
+      extraHeaders: rate.headers,
     })
   } catch (e) {
     console.error(`[/api/fondos/${id}/instructivo] error`, e)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return jsonError(500, 'Error interno', {
+      code: 'internal_error',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   }
 }

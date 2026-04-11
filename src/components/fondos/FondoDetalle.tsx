@@ -22,6 +22,19 @@ const FICHAS_PDF_POR_ID: Record<string, string> = {
   F31: '/fichas-fondos/fontagro.pdf',
 }
 
+/** Nombre legible para la descarga del PDF, indexado por fondo.id */
+const NOMBRES_DESCARGA_PDF: Record<string, string> = {
+  F17: 'Ficha Fondo de Financiamiento_Adaptation Fund.pdf',
+  F20: 'Ficha Fondo de Financiamiento_Green Climate Fund.pdf',
+  F21: 'Ficha Fondo de Financiamiento_Special Climate Change Fund.pdf',
+  F24: 'Ficha Fondo de Financiamiento_Global Facility for Disaster Reduction and Recovery.pdf',
+  F25: 'Ficha Fondo de Financiamiento_eco.business Fund.pdf',
+  F26: 'Ficha Fondo de Financiamiento_Global Innovation Fund.pdf',
+  F28: 'Ficha Fondo de Financiamiento_BID Lab.pdf',
+  F29: 'Ficha Fondo de Financiamiento_IKI.pdf',
+  F31: 'Ficha Fondo de Financiamiento_Fontagro.pdf',
+}
+
 async function descargarFichaEstatica(path: string, nombre: string) {
   const res = await fetch(path)
   const blob = await res.blob()
@@ -558,7 +571,7 @@ export function FondoDetalle({ fondo }: Props) {
 
             const handleClick = async () => {
               if (fichaEstatica) {
-                const nombreArchivo = fichaEstatica.split('/').pop() ?? 'ficha.pdf'
+                const nombreArchivo = NOMBRES_DESCARGA_PDF[fondo.id] ?? fichaEstatica.split('/').pop() ?? 'ficha.pdf'
                 mostrarLoader('ficha paso a paso')
                 try {
                   await descargarFichaEstatica(fichaEstatica, nombreArchivo)

@@ -3,7 +3,6 @@ import Image from 'next/image'
 export default function Footer() {
   return (
     <footer className="w-full bg-white">
-
       <div style={{ display: 'flex', width: '100%', height: '10px' }}>
         <div style={{ flex: '0 0 50%', background: '#ffc800' }} />
         <div style={{ flex: '0 0 25%', background: '#223a7a' }} />
@@ -11,7 +10,6 @@ export default function Footer() {
       </div>
 
       <div className="py-20 px-6 flex flex-col items-center gap-10">
-        {/* Logo centrado */}
         <div className="flex items-center justify-center">
           <Image
             src="/logo-ungrd.png"
@@ -22,7 +20,6 @@ export default function Footer() {
           />
         </div>
 
-        {/* Redes sociales */}
         <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-[#213362]">
           {[
             { label: '@GestionUNGRD', src: '/icons/facebook.png', href: 'https://www.facebook.com/GestionUNGRD' },
@@ -53,7 +50,6 @@ export default function Footer() {
           ))}
         </div>
 
-        {/* Web */}
         <a
           href="https://www.gestiondelriesgo.gov.co"
           target="_blank"
@@ -66,3 +62,4 @@ export default function Footer() {
     </footer>
   )
 }
+

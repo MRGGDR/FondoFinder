@@ -1,69 +1,130 @@
-/**
+﻿/**
  * POST /api/perfiles/crear-o-recuperar
  *
- * Crea un perfil de consulta nuevo (sin password) o recupera uno existente
- * por nombre normalizado + municipio (para evitar duplicidos del mismo usuario).
- * Devuelve perfil_id, codigo_acceso y si es nuevo o recuperado.
- *
- * El frontend debe guardar { perfil_id, codigo_acceso } en localStorage.
- *
- * Payload esperado (CrearPerfilPayload):
- *   nombre_contacto (requerido), municipio_id?, tipo_actor?, entidad?,
- *   canal_registro?, metadata_json?
- *
- * MIGRACIÓN A POSTGRESQL PURO:
- *   Reemplazar llamadas .from('perfiles_consulta') por SQL directo.
+ * Crea un perfil de consulta o recupera uno existente por nombre normalizado + municipio.
+ * Sistema sin auth tradicional (LightSession).
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDb } from '@/lib/db'
-import type { CrearPerfilPayload, PerfilConsultaRespuesta } from '@/types/database'
+import { jsonError, jsonOk } from '@/lib/http/apiResponse'
+import { RATE_POLICIES } from '@/lib/http/ratePolicies'
+import { consumeRateLimit } from '@/lib/http/rateLimit'
+import {
+  ValidationError,
+  asOptionalString,
+  asOptionalUuid,
+  ensureObject,
+  parseJsonBody,
+} from '@/lib/http/validation'
+import { isAdminAccessCodeServer } from '@/lib/adminAccess'
 
-/**
- * Aproxima fn_normalizar_texto() de PostgreSQL en JS puro.
- * La función SQL hace: lower(unaccent(trim(x))) + colapso de espacios.
- * NFD decomposition + strip combining marks ≈ unaccent para texto latino.
- */
 function normalizarTexto(texto: string): string {
   return texto
     .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '')  // strip diacritics (≈ unaccent)
+    .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase()
     .trim()
     .replace(/\s+/g, ' ')
 }
 
-/**
- * Genera un código de acceso corto estilo "FF-ABCD".
- * 4 chars alfanuméricos en mayúsculas → 36^4 = 1.6M combinaciones,
- * suficiente para el volumen esperado de perfiles de consulta.
- */
-function generarCodigoAcceso(): string {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789' // sin 0/O/1/I para legibilidad
-  let sufijo = ''
-  for (let i = 0; i < 4; i++) {
-    sufijo += chars[Math.floor(Math.random() * chars.length)]
+const CONECTORES_APELLIDO = new Set([
+  'da', 'das', 'de', 'del', 'della', 'delle', 'dello', 'di', 'do', 'dos',
+  'e', 'el', 'la', 'las', 'los', 'van', 'von', 'y',
+])
+
+function tokenizarNombre(nombreContacto: string): string[] {
+  return normalizarTexto(nombreContacto)
+    .split(' ')
+    .map((p) => p.replace(/[^a-z0-9]/g, ''))
+    .filter(Boolean)
+}
+
+function apellidoSignificativo(partes: string[]): string {
+  for (let i = partes.length - 1; i >= 0; i--) {
+    const p = partes[i]
+    if (!CONECTORES_APELLIDO.has(p)) return p
   }
-  return `FF-${sufijo}`
+  return partes[partes.length - 1] ?? 'usuario'
+}
+
+function construirCodigoBase(nombreContacto: string): string {
+  const partes = tokenizarNombre(nombreContacto)
+  if (partes.length === 0) return 'u.usuario'
+
+  const primerNombre = partes[0]
+  const inicial = primerNombre[0] ?? 'u'
+
+  if (partes.length === 1) {
+    return `${inicial}.${primerNombre}`
+  }
+
+  return `${inicial}.${apellidoSignificativo(partes)}`
+}
+
+async function generarCodigoAccesoDisponible(
+  db: ReturnType<typeof getDb>,
+  nombreContacto: string,
+): Promise<string> {
+  const base = construirCodigoBase(nombreContacto)
+
+  for (let n = 0; n < 200; n++) {
+    const candidato = n === 0 ? base : `${base}${n + 1}`
+    const { data, error } = await db
+      .from('perfiles_consulta')
+      .select('id')
+      .eq('codigo_acceso', candidato)
+      .limit(1)
+
+    if (error) throw new Error(error.message)
+    if (!data || data.length === 0) return candidato
+  }
+
+  return `${base}${Date.now().toString().slice(-4)}`
 }
 
 export async function POST(req: NextRequest) {
+  const rate = consumeRateLimit(req, RATE_POLICIES.perfilesCrear)
+  if (!rate.allowed) {
+    return jsonError(429, 'Demasiadas solicitudes. Intenta de nuevo mas tarde.', {
+      code: 'rate_limited',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
+  }
+
   try {
-    const body: CrearPerfilPayload = await req.json()
+    const body = ensureObject(await parseJsonBody(req, { maxBytes: 12 * 1024 }))
 
-    const { nombre_contacto, municipio_id, tipo_actor, entidad, canal_registro, metadata_json } = body
+    const nombre_contacto = asOptionalString(body.nombre_contacto, { minLen: 2, maxLen: 120 })
+    const municipio_id = asOptionalUuid(body.municipio_id)
+    const tipo_actor = asOptionalString(body.tipo_actor, { maxLen: 60 })
+    const entidad = asOptionalString(body.entidad, { maxLen: 160 })
+    const canal_registro = asOptionalString(body.canal_registro, { maxLen: 60 })
+    const metadata_json = body.metadata_json ?? null
 
-    if (!nombre_contacto || typeof nombre_contacto !== 'string' || nombre_contacto.trim().length < 2) {
-      return NextResponse.json({ error: 'nombre_contacto es requerido (mínimo 2 caracteres)' }, { status: 400 })
+    if (!nombre_contacto) {
+      throw new ValidationError('nombre_contacto es requerido (minimo 2 caracteres)')
+    }
+
+    if (metadata_json != null) {
+      const metadataSize = Buffer.byteLength(JSON.stringify(metadata_json), 'utf8')
+      if (metadataSize > 4096) {
+        throw new ValidationError('metadata_json excede el tamano permitido (4KB)')
+      }
     }
 
     const db = getDb()
 
-    type PerfilRow = { id: string; codigo_acceso: string; nombre_contacto: string | null; municipio_id: string | null; tipo_actor: string | null; entidad: string | null }
+    type PerfilRow = {
+      id: string
+      codigo_acceso: string
+      nombre_contacto: string | null
+      municipio_id: string | null
+      tipo_actor: string | null
+      entidad: string | null
+    }
 
-    // Intentar recuperar un perfil existente con el mismo municipio y nombre normalizado.
-    // normalizarTexto() aproxima fn_normalizar_texto(BD) con NFD+lowercase+trim.
-    // MIGRATION NOTE: SELECT ... FROM perfiles_consulta WHERE nombre_normalizado = fn_normalizar_texto($1)
     let perfilExistente: PerfilRow | null = null
 
     if (municipio_id) {
@@ -81,19 +142,23 @@ export async function POST(req: NextRequest) {
       }
     }
 
-    // Helper: fetch nombre + departamento del municipio
     const fetchMunicipio = async (
       id: string | null,
     ): Promise<{ nombre: string | null; departamento: string | null }> => {
       if (!id) return { nombre: null, departamento: null }
-      const { data: mRow } = await db.from('municipios').select('nombre, departamento').eq('id', id).single()
+      const { data: mRow } = await db
+        .from('municipios')
+        .select('nombre, departamento')
+        .eq('id', id)
+        .single()
       if (!mRow) return { nombre: null, departamento: null }
-      return { nombre: (mRow as { nombre: string }).nombre, departamento: (mRow as { departamento: string }).departamento }
+      return {
+        nombre: (mRow as { nombre: string }).nombre,
+        departamento: (mRow as { departamento: string }).departamento,
+      }
     }
 
     if (perfilExistente) {
-      // Actualizar last_seen_at
-      // MIGRATION NOTE: UPDATE perfiles_consulta SET last_seen_at = now() WHERE id = $1
       await db
         .from('perfiles_consulta')
         .update({ last_seen_at: new Date().toISOString() })
@@ -103,6 +168,7 @@ export async function POST(req: NextRequest) {
       const respuesta = {
         perfil_id: perfilExistente.id,
         codigo_acceso: perfilExistente.codigo_acceso,
+        es_admin: isAdminAccessCodeServer(perfilExistente.codigo_acceso),
         nombre_contacto: perfilExistente.nombre_contacto,
         municipio_id: perfilExistente.municipio_id,
         tipo_actor: perfilExistente.tipo_actor,
@@ -111,21 +177,29 @@ export async function POST(req: NextRequest) {
         departamento,
         es_nuevo: false,
       }
-      return NextResponse.json(respuesta, { status: 200 })
+      return jsonOk(respuesta, {
+        status: 200,
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
     }
 
-    // Crear perfil nuevo — generamos codigo_acceso y nombre_normalizado en JS
-    // por si el trigger trg_biu_perfiles_consulta no existe en este entorno.
-    // MIGRATION NOTE: INSERT INTO perfiles_consulta (...) RETURNING id, codigo_acceso
     const nombreNorm = normalizarTexto(nombre_contacto)
 
-    // Intentar INSERT; en caso de colisión de codigo_acceso (unique), reintentar una vez
-    type PerfilCreado = { id: string; codigo_acceso: string; nombre_contacto: string | null; municipio_id: string | null; tipo_actor: string | null; entidad: string | null }
+    type PerfilCreado = {
+      id: string
+      codigo_acceso: string
+      nombre_contacto: string | null
+      municipio_id: string | null
+      tipo_actor: string | null
+      entidad: string | null
+    }
+
     let nuevoPerfil: PerfilCreado | null = null
     let errorCrear: { message: string; code?: string } | null = null
 
-    for (let intento = 0; intento < 2; intento++) {
-      const codigoAcceso = generarCodigoAcceso()
+    for (let intento = 0; intento < 5; intento++) {
+      const codigoAcceso = await generarCodigoAccesoDisponible(db, nombre_contacto)
       const { data, error } = await db
         .from('perfiles_consulta')
         .insert({
@@ -143,34 +217,29 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (!error && data) {
-        nuevoPerfil = data as unknown as PerfilCreado
+        nuevoPerfil = data as PerfilCreado
         errorCrear = null
         break
       }
-      // Si el error es de colisión de código (23505 unique_violation), reintentar
-      errorCrear = error ?? { message: 'Respuesta vacía' }
+
+      errorCrear = error ?? { message: 'Respuesta vacia' }
       if (error?.code !== '23505') break
     }
 
     if (errorCrear || !nuevoPerfil) {
       console.error('[/api/perfiles/crear-o-recuperar]', errorCrear?.message, errorCrear)
-      return NextResponse.json(
-        {
-          error: 'No se pudo crear el perfil',
-          // Expuesto en dev para diagnóstico. No purgar hasta confirmar fix en producción.
-          detail: process.env.NODE_ENV !== 'production' ? errorCrear?.message : undefined,
-          hint: process.env.NODE_ENV !== 'production'
-            ? 'Verifica que SUPABASE_SERVICE_ROLE_KEY esté en .env.local (anon key no puede INSERT si RLS está activo).'
-            : undefined,
-        },
-        { status: 500 }
-      )
+      return jsonError(500, 'No se pudo crear el perfil', {
+        code: 'profile_create_failed',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
     }
 
     const { nombre: nombre_municipio, departamento } = await fetchMunicipio(nuevoPerfil.municipio_id)
     const respuesta = {
       perfil_id: nuevoPerfil.id,
       codigo_acceso: nuevoPerfil.codigo_acceso,
+      es_admin: isAdminAccessCodeServer(nuevoPerfil.codigo_acceso),
       nombre_contacto: nuevoPerfil.nombre_contacto,
       municipio_id: nuevoPerfil.municipio_id,
       tipo_actor: nuevoPerfil.tipo_actor,
@@ -179,9 +248,26 @@ export async function POST(req: NextRequest) {
       departamento,
       es_nuevo: true,
     }
-    return NextResponse.json(respuesta, { status: 201 })
+
+    return jsonOk(respuesta, {
+      status: 201,
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   } catch (e) {
+    if (e instanceof ValidationError) {
+      return jsonError(400, e.message, {
+        code: 'invalid_input',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
+    }
+
     console.error('[/api/perfiles/crear-o-recuperar] error', e)
-    return NextResponse.json({ error: 'Solicitud inválida' }, { status: 400 })
+    return jsonError(400, 'Solicitud invalida', {
+      code: 'invalid_request',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   }
 }

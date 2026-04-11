@@ -1,12 +1,12 @@
 import type { Metadata, Viewport } from 'next'
 import { Nunito_Sans } from 'next/font/google'
 import './globals.css'
-import Footer from '@/components/layout/Footer'
-import { AppHeader } from '@/components/layout/AppHeader'
 import { LightSessionProvider } from '@/context/LightSessionContext'
 import AccessGate from '@/components/access/AccessGate'
-import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
+import { AppHeader } from '@/components/layout/AppHeader'
+import Footer from '@/components/layout/Footer'
 import { NavigationLoader } from '@/components/ui/NavigationLoader'
+import { FeedbackWidget } from '@/components/feedback/FeedbackWidget'
 
 const nunitoSans = Nunito_Sans({
   subsets: ['latin'],
@@ -18,7 +18,7 @@ const nunitoSans = Nunito_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'FondosFinder — UNGRD',
+  title: 'Herramienta — UNGRD',
   description: 'Buscador de fuentes de financiamiento para gestión del riesgo de desastres',
   manifest: '/manifest.json',
 }
@@ -35,9 +35,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <AccessGate>
             <div className="min-h-screen flex flex-col">
               <AppHeader />
-              <main className="flex-1">
-                {children}
-              </main>
+              <main className="flex-1">{children}</main>
               <Footer />
               <FeedbackWidget />
               <NavigationLoader />

@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useLightSession } from '@/context/LightSessionContext'
 import { HeroBuscador } from '@/components/busqueda/HeroBuscador'
 import {
   buscarFondosNg,
@@ -71,6 +72,36 @@ function buildFilters(state: NgWizardState): NgBusquedaFilters {
     actividadIds: state.actividadIds,
     limite: 200,
   }
+}
+
+function stableIdsKey(values: number[]): string {
+  return [...values].sort((a, b) => a - b).join(',')
+}
+
+function isAbortLikeError(error: unknown): boolean {
+  if (!error) return false
+
+  if (typeof DOMException !== 'undefined' && error instanceof DOMException) {
+    return error.name === 'AbortError'
+  }
+
+  if (error instanceof Error) {
+    const text = `${error.name} ${error.message}`.toLowerCase()
+    return (
+      error.name === 'AbortError' ||
+      text.includes('aborterror') ||
+      text.includes('signal is aborted') ||
+      text.includes('request aborted')
+    )
+  }
+
+  const shape = error as { name?: unknown; message?: unknown }
+  const text = `${String(shape.name ?? '')} ${String(shape.message ?? '')}`.toLowerCase()
+  return (
+    text.includes('aborterror') ||
+    text.includes('signal is aborted') ||
+    text.includes('request aborted')
+  )
 }
 
 // ── Icons ──────────────────────────────────────────────────────────────────────
@@ -212,7 +243,7 @@ function getActividadIcon(name: string): string {
   return 'activity'
 }
 
-// ── Result cards (legacy visual style, V5 data) ───────────────────────────────
+// ── Result cards (estilo visual del producto final V5) ────────────────────────
 function ResultadosNg({
   resultados,
   cargando,
@@ -448,10 +479,15 @@ function ResultadosNg({
 
 export function BuscadorNgV5() {
   const router = useRouter()
+  const { perfil } = useLightSession()
   const wizardRef = useRef<HTMLDivElement>(null)
   const stepRefs = useRef<Record<number, HTMLElement | null>>({})
+  const categoriasKeyRef = useRef<string>('')
+  const actividadesKeyRef = useRef<string>('')
+  const searchAbortRef = useRef<AbortController | null>(null)
 
   const [iniciado, setIniciado] = useState(false)
+  const [mostrarIntro, setMostrarIntro] = useState(false)
   const [paso, setPaso] = useState<Paso>(1)
   const [state, setState] = useState<NgWizardState>(INITIAL_STATE)
 
@@ -495,11 +531,24 @@ export function BuscadorNgV5() {
   }, [iniciado, paso])
 
   useEffect(() => {
+    return () => {
+      if (searchAbortRef.current) {
+        searchAbortRef.current.abort()
+      }
+    }
+  }, [])
+
+  useEffect(() => {
     let active = true
+    const controller = new AbortController()
     setLoadingCatalogos(true)
     setErrorCatalogos(null)
 
-    Promise.all([getNgActores(), getProcesosGrd(), getObjetivosPngrd()])
+    Promise.all([
+      getNgActores({ signal: controller.signal }),
+      getProcesosGrd({ signal: controller.signal }),
+      getObjetivosPngrd({ signal: controller.signal }),
+    ])
       .then(([rowsActores, rowsProcesos, rowsObjetivos]) => {
         if (!active) return
         setActores(rowsActores)
@@ -508,6 +557,7 @@ export function BuscadorNgV5() {
       })
       .catch(error => {
         if (!active) return
+        if (isAbortLikeError(error)) return
         setErrorCatalogos(error instanceof Error ? error.message : 'No se pudo cargar catalogo base.')
       })
       .finally(() => {
@@ -516,112 +566,174 @@ export function BuscadorNgV5() {
 
     return () => {
       active = false
+      controller.abort()
     }
   }, [])
 
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
+    const timer = setTimeout(() => {
+      if (!state.actorId) return
+      setLoadingTipos(true)
+      getNgTiposFondo(state.actorId, { signal: controller.signal })
+        .then(rows => {
+          if (!active) return
+          setTipos(rows)
+        })
+        .catch(error => {
+          if (!active) return
+          if (isAbortLikeError(error)) return
+          setErrorCatalogos(error instanceof Error ? error.message : 'No se pudieron cargar tipos de fondo.')
+        })
+        .finally(() => {
+          if (active) setLoadingTipos(false)
+        })
+    }, 160)
 
     if (!state.actorId) {
       setTipos([])
+      clearTimeout(timer)
       return () => {
         active = false
+        controller.abort()
       }
     }
 
-    setLoadingTipos(true)
-    getNgTiposFondo(state.actorId)
-      .then(rows => {
-        if (!active) return
-        setTipos(rows)
-      })
-      .catch(error => {
-        if (!active) return
-        setErrorCatalogos(error instanceof Error ? error.message : 'No se pudieron cargar tipos de fondo.')
-      })
-      .finally(() => {
-        if (active) setLoadingTipos(false)
-      })
-
     return () => {
       active = false
+      clearTimeout(timer)
+      controller.abort()
     }
   }, [state.actorId])
 
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
 
     if (!state.actorId || !state.tipoFondoId) {
       setCategorias([])
+      categoriasKeyRef.current = ''
       return () => {
         active = false
+        controller.abort()
       }
     }
 
-    setLoadingCategorias(true)
-    getNgCategorias({
-      actorId: state.actorId,
-      tipoFondoId: state.tipoFondoId,
-      procesoIds: state.procesoIds,
-      objetivoIds: state.objetivoIds,
-      categoriaId: null,
-      actividadIds: [],
-    })
-      .then(rows => {
-        if (!active) return
-        setCategorias(rows)
-      })
-      .catch(error => {
-        if (!active) return
-        setErrorCatalogos(error instanceof Error ? error.message : 'No se pudieron cargar categorias.')
-      })
-      .finally(() => {
-        if (active) setLoadingCategorias(false)
-      })
+    const requestKey = [
+      state.actorId,
+      state.tipoFondoId,
+      stableIdsKey(state.procesoIds),
+      stableIdsKey(state.objetivoIds),
+    ].join('|')
+
+    if (categoriasKeyRef.current === requestKey) {
+      return () => {
+        active = false
+        controller.abort()
+      }
+    }
+    categoriasKeyRef.current = requestKey
+
+    const timer = setTimeout(() => {
+      setLoadingCategorias(true)
+      getNgCategorias(
+        {
+          actorId: state.actorId,
+          tipoFondoId: state.tipoFondoId,
+          procesoIds: state.procesoIds,
+          objetivoIds: state.objetivoIds,
+          categoriaId: null,
+          actividadIds: [],
+        },
+        { signal: controller.signal },
+      )
+        .then(rows => {
+          if (!active) return
+          setCategorias(rows)
+        })
+        .catch(error => {
+          if (!active) return
+          if (isAbortLikeError(error)) return
+          setErrorCatalogos(error instanceof Error ? error.message : 'No se pudieron cargar categorias.')
+        })
+        .finally(() => {
+          if (active) setLoadingCategorias(false)
+        })
+    }, 220)
 
     return () => {
       active = false
+      clearTimeout(timer)
+      controller.abort()
     }
   }, [state.actorId, state.tipoFondoId, state.procesoIds, state.objetivoIds])
 
   useEffect(() => {
     let active = true
+    const controller = new AbortController()
 
     if (!state.actorId || !state.tipoFondoId || !state.categoriaId) {
       setActividades([])
+      actividadesKeyRef.current = ''
       setState(prev => (prev.actividadIds.length > 0 ? { ...prev, actividadIds: [] } : prev))
       return () => {
         active = false
+        controller.abort()
       }
     }
 
-    setLoadingActividades(true)
-    getNgActividades({
-      actorId: state.actorId,
-      tipoFondoId: state.tipoFondoId,
-      procesoIds: state.procesoIds,
-      objetivoIds: state.objetivoIds,
-      categoriaId: state.categoriaId,
-      actividadIds: [],
-    })
-      .then(rows => {
-        if (!active) return
-        setActividades(rows)
-        setState(prev => ({
-          ...prev,
-          actividadIds: prev.actividadIds.filter(id => rows.some(item => item.actividad_id === id)),
-        }))
-      })
-      .catch(error => {
-        if (!active) return
-        setErrorCatalogos(error instanceof Error ? error.message : 'No se pudieron cargar actividades.')
-      })
-      .finally(() => {
-        if (active) setLoadingActividades(false)
-      })
+    const requestKey = [
+      state.actorId,
+      state.tipoFondoId,
+      stableIdsKey(state.procesoIds),
+      stableIdsKey(state.objetivoIds),
+      state.categoriaId,
+    ].join('|')
+
+    if (actividadesKeyRef.current === requestKey) {
+      return () => {
+        active = false
+        controller.abort()
+      }
+    }
+    actividadesKeyRef.current = requestKey
+
+    const timer = setTimeout(() => {
+      setLoadingActividades(true)
+      getNgActividades(
+        {
+          actorId: state.actorId,
+          tipoFondoId: state.tipoFondoId,
+          procesoIds: state.procesoIds,
+          objetivoIds: state.objetivoIds,
+          categoriaId: state.categoriaId,
+          actividadIds: [],
+        },
+        { signal: controller.signal },
+      )
+        .then(rows => {
+          if (!active) return
+          setActividades(rows)
+          setState(prev => ({
+            ...prev,
+            actividadIds: prev.actividadIds.filter(id => rows.some(item => item.actividad_id === id)),
+          }))
+        })
+        .catch(error => {
+          if (!active) return
+          if (isAbortLikeError(error)) return
+          setErrorCatalogos(error instanceof Error ? error.message : 'No se pudieron cargar actividades.')
+        })
+        .finally(() => {
+          if (active) setLoadingActividades(false)
+        })
+    }, 220)
 
     return () => {
       active = false
+      clearTimeout(timer)
+      controller.abort()
     }
   }, [state.actorId, state.tipoFondoId, state.procesoIds, state.objetivoIds, state.categoriaId])
 
@@ -630,6 +742,13 @@ export function BuscadorNgV5() {
       setErrorResultados('Selecciona actor y tipo de fondo antes de buscar.')
       return
     }
+    if (loadingResultados) return
+
+    if (searchAbortRef.current) {
+      searchAbortRef.current.abort()
+    }
+    const controller = new AbortController()
+    searchAbortRef.current = controller
 
     setLoadingResultados(true)
     setErrorResultados(null)
@@ -637,15 +756,15 @@ export function BuscadorNgV5() {
     try {
       const filters = buildFilters(state)
       const [rows, vigenciasRows, flagsRow] = await Promise.all([
-        buscarFondosNg(filters),
-        getNgVigencias(filters),
-        getNgResumenFlags(filters),
+        buscarFondosNg(filters, { signal: controller.signal }),
+        getNgVigencias(filters, { signal: controller.signal }),
+        getNgResumenFlags(filters, { signal: controller.signal }),
       ])
 
       // Enriquecer con datos de fondos_modelos_aplicacion
       const fondoIds = rows.map(r => r.fondo_id)
       const modeloMap: Awaited<ReturnType<typeof getNgModeloInfoBatch>> =
-        await getNgModeloInfoBatch(fondoIds).catch(() => ({}))
+        await getNgModeloInfoBatch(fondoIds, { signal: controller.signal }).catch(() => ({}))
       const rowsEnriquecidos = rows.map(r => ({
         ...r,
         ...(modeloMap[r.fondo_id] ?? {}),
@@ -655,19 +774,49 @@ export function BuscadorNgV5() {
       setVigencias(vigenciasRows)
       setFlags(flagsRow)
       setPaso(7)
+
+      // Registrar evento de búsqueda para trazabilidad en mapa admin (fire-and-forget)
+      fetch('/api/ng/evento-busqueda', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        keepalive: true,
+        body: JSON.stringify({
+          perfil_id: perfil?.perfil_id ?? null,
+          municipio_origen_id: perfil?.municipio_id ?? null,
+          actor_id: state.actorId,
+          tipo_fondo_id: state.tipoFondoId,
+          proceso_ids: state.procesoIds,
+          objetivo_ids: state.objetivoIds,
+          categoria_id: state.categoriaId,
+          actividad_ids: state.actividadIds,
+          resultados_count: rowsEnriquecidos.length,
+          resultados: rowsEnriquecidos.map((r, i) => ({ fondo_id: r.fondo_id, posicion: i + 1 })),
+        }),
+      }).catch(() => { /* falla silenciosa */ })
     } catch (error) {
+      if (isAbortLikeError(error)) {
+        return
+      }
       setErrorResultados(error instanceof Error ? error.message : 'Error ejecutando la busqueda V5.')
     } finally {
-      setLoadingResultados(false)
+      if (searchAbortRef.current === controller) {
+        searchAbortRef.current = null
+        setLoadingResultados(false)
+      }
     }
   }
 
   function comenzar() {
+    setMostrarIntro(true)
+  }
+
+  function iniciarDesdeModal() {
+    setMostrarIntro(false)
     setIniciado(true)
     setPaso(1)
     setTimeout(() => {
       wizardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
-    }, 50)
+    }, 100)
   }
 
   function reiniciarTodo() {
@@ -1040,10 +1189,10 @@ export function BuscadorNgV5() {
                   <div className="text-center max-w-3xl mx-auto mb-16">
                     <span className="text-6xl font-black text-[#FFCD00] block mb-2">05</span>
                     <h2 id="ng-paso5-titulo" className="text-4xl font-black text-[#213362] mb-6">
-                      ¿Categoría?
+                      Temáticas que financian los fondos
                     </h2>
                     <p className="text-gray-500 font-medium leading-relaxed">
-                      Selecciona la categoría temática de tu iniciativa. Opcional.
+                      Selecciona la temática que mejor representa tu iniciativa para afinar los resultados. Opcional.
                     </p>
                   </div>
 
@@ -1107,12 +1256,14 @@ export function BuscadorNgV5() {
                     >
                       ← Cambiar objetivos
                     </button>
-                    <button
-                      onClick={() => setPaso(6)}
-                      className="px-8 py-4 rounded-2xl border-2 border-[#213362] text-[#213362] font-black hover:bg-[#213362] hover:text-white transition-colors"
-                    >
-                      Continuar sin categoría
-                    </button>
+                    {!state.categoriaId && (
+                      <button
+                        onClick={() => setPaso(6)}
+                        className="px-8 py-4 rounded-2xl border-2 border-[#213362] text-[#213362] font-black hover:bg-[#213362] hover:text-white transition-colors"
+                      >
+                        Continuar sin categoría
+                      </button>
+                    )}
                   </div>
                 </div>
               </section>
@@ -1234,7 +1385,7 @@ export function BuscadorNgV5() {
                             : `${resultados.length} fondos recomendados para ti`}
                       </h2>
                       <p className="text-gray-400 font-medium mt-1 text-sm">
-                        Estos resultados se ordenan por afinidad con lo que seleccionaste en el buscador.
+                        Estos resultados se ordenan por coincidencia con los filtros que seleccionaste.
                       </p>
                     </div>
                     <button
@@ -1376,6 +1527,78 @@ export function BuscadorNgV5() {
           </>
         )}
       </div>
+
+      {/* ── Modal de instrucciones estilo videojuego ──────────────── */}
+      {mostrarIntro && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="intro-modal-titulo"
+          className="fixed inset-0 z-[100] flex items-center justify-center p-4"
+          style={{ backgroundColor: 'rgba(0,0,0,0.75)', backdropFilter: 'blur(6px)' }}
+        >
+          <div
+            className="relative w-full max-w-3xl rounded-3xl overflow-hidden shadow-[0_32px_80px_rgba(0,0,0,0.55)]"
+            style={{ background: '#213362', borderTop: '4px solid #FFCD00' }}
+          >
+            <div className="overflow-y-auto max-h-[90vh] px-10 py-12 md:px-14 md:py-14">
+
+              {/* Chip */}
+              <div className="mb-6">
+                <span className="inline-flex items-center gap-1.5 bg-[#FFCD00]/15 border border-[#FFCD00]/30 text-[#FFCD00] text-[9px] font-black uppercase tracking-[2px] px-3 py-[5px] rounded-full">
+                  <span className="w-[4px] h-[4px] bg-[#FFCD00] rounded-full" />
+                  Instrucciones
+                </span>
+              </div>
+
+              {/* Título */}
+              <h2 id="intro-modal-titulo" className="text-3xl md:text-4xl font-black text-white leading-tight mb-4">
+                ¿Cómo funciona<br />
+                <span className="text-[#FFCD00]">la herramienta?</span>
+              </h2>
+
+              {/* Descripción */}
+              <p className="text-white/60 text-base leading-relaxed mb-10 max-w-xl">
+                Para identificar el tipo de fondo que puede apoyar tu proyecto, a lo largo de la herramienta vas a encontrar distintos filtros que identificarán los fondos más adecuados para tu territorio.
+              </p>
+
+              {/* Grid de pasos */}
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+                {([
+                  { num: '01', icon: 'building', title: '¿Quién eres?',      desc: 'Tipo de entidad que representa al territorio'           },
+                  { num: '02', icon: 'globe',    title: 'Tipo de fondo',     desc: 'Nacional, territorial o internacional'                  },
+                  { num: '03', icon: 'shield',   title: 'Proceso GRD',       desc: 'Proceso de gestión del riesgo a financiar'              },
+                  { num: '04', icon: 'target',   title: 'Objetivos PNGRD',   desc: 'Alineación con el Plan Nacional GRD'                    },
+                  { num: '05', icon: 'tag',      title: 'Temática',          desc: 'Temáticas que financian los fondos'                     },
+                  { num: '06', icon: 'tool',     title: 'Actividad',         desc: 'Refinamiento opcional por actividad específica'         },
+                ] as const).map(step => (
+                  <div
+                    key={step.num}
+                    className="rounded-2xl border border-white/10 bg-white/[0.05] p-5 hover:bg-white/[0.09] transition-colors"
+                  >
+                    <span className="block text-[10px] font-black text-[#FFCD00]/70 tracking-widest mb-3">{step.num}</span>
+                    <WizardIcon type={step.icon} className="w-5 h-5 text-[#FFCD00] mb-2" />
+                    <h4 className="text-white font-black text-sm mb-1">{step.title}</h4>
+                    <p className="text-white/45 text-[11px] leading-snug">{step.desc}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* CTA */}
+              <div className="flex justify-center">
+                <button
+                  onClick={iniciarDesdeModal}
+                  className="bg-[#FFCD00] text-[#213362] font-black text-sm uppercase tracking-[1px] px-14 py-4 rounded-2xl shadow-[0_8px_32px_rgba(255,205,0,0.3)] hover:brightness-110 hover:scale-[1.02] active:scale-95 transition-all"
+                >
+                  Comenzar →
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+
     </div>
   )
 }

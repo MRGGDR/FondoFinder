@@ -1,22 +1,38 @@
-/**
+﻿/**
  * GET /api/municipios/por-departamento?dep=[nombre_departamento]
- *
- * Devuelve los municipios de un departamento, ordenados por nombre.
- *
- * Query params:
- *   dep (string, requerido) — nombre exacto del departamento
- *
- * Respuesta: { municipios: { id: string; nombre: string }[] }
  */
 
-import { NextRequest, NextResponse } from 'next/server'
+import { NextRequest } from 'next/server'
 import { getDb } from '@/lib/db'
+import { jsonError, jsonOk } from '@/lib/http/apiResponse'
+import { RATE_POLICIES } from '@/lib/http/ratePolicies'
+import { consumeRateLimit } from '@/lib/http/rateLimit'
 
 export async function GET(req: NextRequest) {
-  const dep = req.nextUrl.searchParams.get('dep')?.trim()
+  const rate = consumeRateLimit(req, RATE_POLICIES.municipios)
+  if (!rate.allowed) {
+    return jsonError(429, 'Demasiadas solicitudes. Intenta de nuevo en unos segundos.', {
+      code: 'rate_limited',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
+  }
+
+  const dep = req.nextUrl.searchParams.get('dep')?.trim() ?? ''
 
   if (!dep) {
-    return NextResponse.json({ error: 'Parámetro "dep" requerido' }, { status: 400 })
+    return jsonError(400, 'Parametro dep requerido', {
+      code: 'missing_dep',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
+  }
+  if (dep.length > 80) {
+    return jsonError(400, 'Parametro dep invalido', {
+      code: 'invalid_dep',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   }
 
   try {
@@ -31,18 +47,26 @@ export async function GET(req: NextRequest) {
 
     if (error) {
       console.error('[/api/municipios/por-departamento]', error)
-      return NextResponse.json({ error: 'Error al consultar municipios' }, { status: 500 })
+      return jsonError(500, 'Error al consultar municipios', {
+        code: 'db_query_failed',
+        cacheControl: 'no-store',
+        extraHeaders: rate.headers,
+      })
     }
 
-    return NextResponse.json(
+    return jsonOk(
       { municipios: data ?? [] },
       {
-        status: 200,
-        headers: { 'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400' },
+        cacheControl: 'public, s-maxage=3600, stale-while-revalidate=86400',
+        extraHeaders: rate.headers,
       },
     )
   } catch (e) {
     console.error('[/api/municipios/por-departamento] unexpected', e)
-    return NextResponse.json({ error: 'Error interno' }, { status: 500 })
+    return jsonError(500, 'Error interno', {
+      code: 'internal_error',
+      cacheControl: 'no-store',
+      extraHeaders: rate.headers,
+    })
   }
 }

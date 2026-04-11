@@ -8,7 +8,7 @@ import type {
   MunicipioOption,
 } from '@/types/buscador-avanzado'
 
-export const metadata = { title: 'Fondos — FondosFinder' }
+export const metadata = { title: 'Fondos — Herramienta' }
 
 export default async function BuscarAvanzadoPage() {
   const db = getDb()

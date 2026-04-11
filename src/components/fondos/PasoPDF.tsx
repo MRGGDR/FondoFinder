@@ -254,7 +254,7 @@ export function PasoPDF({ fondo, instructivo }: Props) {
   return (
     <Document
       title={`Paso a Paso — ${fondo.nombre}`}
-      author="UNGRD - FondosFinder"
+      author="UNGRD - Herramienta"
       subject="Guía paso a paso de acceso a financiamiento"
     >
       <Page size="A4" style={S.page}>
@@ -347,7 +347,7 @@ export function PasoPDF({ fondo, instructivo }: Props) {
           <View style={S.footerBar}>
             <Text style={S.footerLeft}>www.gestiondelriesgo.gov.co</Text>
             <Text style={S.footerRight}>
-              FondosFinder — UNGRD  {new Date().getFullYear()}
+              Herramienta — UNGRD  {new Date().getFullYear()}
             </Text>
           </View>
         </View>

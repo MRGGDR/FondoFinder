@@ -686,7 +686,7 @@ export default function ColombiaMap() {
                   >
                     Buscar fondos en este territorio →
                   </a>
-                  <a href="/fondos" className="col-map-btn-secondary">
+                  <a href="/buscar-avanzado" className="col-map-btn-secondary">
                     Ver catálogo completo
                   </a>
                 </div>
