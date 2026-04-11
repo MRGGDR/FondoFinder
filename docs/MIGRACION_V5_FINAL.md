@@ -62,7 +62,7 @@ El repo final queda orientado a una sola app: **Buscador V5**.
 ### Raiz
 
 - `README.md`
-- `MIGRACION_V5_FINAL.md`
+- `docs/MIGRACION_V5_FINAL.md`
 - `package.json`
 - `package-lock.json`
 - `next.config.js`
@@ -116,7 +116,7 @@ Se eliminaron rutas y logica legacy en bloque (sin reintroducciones).
 
 ### `root/otros` (12)
 
-- `CHANGELOG.md`
+- `docs/CHANGELOG.md`
 - `"PDF Fondo/Ficha Fondo de Financimiento_BID Lab.pdf"`
 - `"PDF Fondo/Ficha Fondos de Financimiento_Adaptation Fund.pdf"`
 - `"PDF Fondo/Ficha Fondos de Financimiento_eco business Fund.pdf"`

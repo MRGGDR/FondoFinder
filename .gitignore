@@ -48,7 +48,6 @@ start-all.js
 
 # ---- Documentacion de sesion / contexto de desarrollo ----
 FondosFinder_*.md
-docs/
 contexto/
 
 # ---- SQL (migraciones ya ejecutadas en Supabase) ----

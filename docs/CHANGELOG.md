@@ -19,18 +19,18 @@ El objetivo de esta version es dejar el repositorio listo para validacion final 
 ### Agregado
 
 #### Documentacion de cierre y seguridad
-- `MIGRACION_V5_FINAL.md`
+- `docs/MIGRACION_V5_FINAL.md`
   - inventario de arquitectura final V5
   - listado de rutas, componentes y servicios preservados
   - listado detallado de removidos legacy
   - validaciones ejecutadas (lint, typecheck, build, verificacion de RPC y tablas)
-- `SECURITY_HARDENING_V5.md`
+- `docs/SECURITY_HARDENING_V5.md`
   - politica de hardening aplicada al buscador V5
   - matriz de superficie HTTP
   - politicas de rate limit por endpoint
   - checklist pre-deploy para Vercel
   - riesgo residual documentado
-- `Documentacion_de_seguridad_aplicadaV5.md`
+- `docs/Documentacion_de_seguridad_aplicadaV5.md`
   - registro operativo de medidas efectivas aplicadas en Supabase y app
 
 #### Capa HTTP endurecida
@@ -146,7 +146,7 @@ La version activa del repositorio queda centrada en el flujo V5 guiado y su capa
 
 ### Operacion recomendada posterior a esta version
 - validar rama final en preview de Vercel
-- confirmar checklist de `SECURITY_HARDENING_V5.md`
+- confirmar checklist de `docs/SECURITY_HARDENING_V5.md`
 - promover rama validada a principal mediante cambio controlado de rama por defecto y merge sin force push sobre la principal vigente
 
 ---

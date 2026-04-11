@@ -64,6 +64,13 @@ SUPABASE_SERVICE_ROLE_KEY=
 
 Nota: `dev/build/start` cargan `scripts/readlink-eisdir-workaround.cjs` para evitar errores `EISDIR` de `readlink` en algunos entornos Windows.
 
+## Documentacion
+
+- [docs/CHANGELOG.md](docs/CHANGELOG.md)
+- [docs/MIGRACION_V5_FINAL.md](docs/MIGRACION_V5_FINAL.md)
+- [docs/SECURITY_HARDENING_V5.md](docs/SECURITY_HARDENING_V5.md)
+- [docs/Documentacion_de_seguridad_aplicadaV5.md](docs/Documentacion_de_seguridad_aplicadaV5.md)
+
 ## Estructura principal
 
 ```text
