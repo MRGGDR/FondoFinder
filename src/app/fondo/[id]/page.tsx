@@ -11,7 +11,7 @@ export async function generateMetadata({ params }: { params: { id: string } }) {
     .single()
 
   return {
-    title: data?.nombre ? `${data.nombre} - Herramienta` : 'Fondo no encontrado',
+    title: data?.nombre ? `${data.nombre} | Financiamiento PNGRD` : 'Fondo no encontrado | Financiamiento PNGRD',
   }
 }
 

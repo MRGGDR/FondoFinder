@@ -18,9 +18,13 @@ const nunitoSans = Nunito_Sans({
 })
 
 export const metadata: Metadata = {
-  title: 'Herramienta — UNGRD',
+  title: 'Financiamiento PNGRD',
   description: 'Buscador de fuentes de financiamiento para gestión del riesgo de desastres',
   manifest: '/manifest.json',
+  icons: {
+    icon: '/favicon-pngrd.svg',
+    shortcut: '/favicon-pngrd.svg',
+  },
 }
 
 export const viewport: Viewport = {

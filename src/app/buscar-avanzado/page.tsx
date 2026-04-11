@@ -8,7 +8,7 @@ import type {
   MunicipioOption,
 } from '@/types/buscador-avanzado'
 
-export const metadata = { title: 'Fondos — Herramienta' }
+export const metadata = { title: 'Fondos | Financiamiento PNGRD' }
 export const dynamic = 'force-dynamic'
 
 export default async function BuscarAvanzadoPage() {

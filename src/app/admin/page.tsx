@@ -1,6 +1,6 @@
 import AdminAccessGuard from '@/components/admin/AdminAccessGuard'
 
-export const metadata = { title: 'Admin - Herramienta' }
+export const metadata = { title: 'Admin | Financiamiento PNGRD' }
 
 export default function AdminPage() {
   return (

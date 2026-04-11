@@ -1,6 +1,6 @@
 {
-  "name": "FondosFinder — UNGRD",
-  "short_name": "FondosFinder",
+  "name": "Financiamiento PNGRD",
+  "short_name": "PNGRD",
   "description": "Buscador de fuentes de financiamiento para gestión del riesgo de desastres",
   "start_url": "/",
   "display": "standalone",

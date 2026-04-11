@@ -1,7 +1,7 @@
 import BuscarClient from './BuscarClient'
 
 export const metadata = {
-  title: 'Buscador V5 - Herramienta',
+  title: 'Financiamiento PNGRD',
   description: 'Wizard principal conectado al backend ng_ de Supabase.',
 }
 
