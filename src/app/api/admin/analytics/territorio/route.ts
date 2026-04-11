@@ -64,6 +64,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { authorizeAdminRequest } from '@/lib/adminGuardServer'
 
+export const dynamic = 'force-dynamic'
+
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i
 function safeUuid(v: unknown): string | null {
   return typeof v === 'string' && UUID_RE.test(v) ? v : null

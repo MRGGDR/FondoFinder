@@ -9,6 +9,7 @@ import type {
 } from '@/types/buscador-avanzado'
 
 export const metadata = { title: 'Fondos — Herramienta' }
+export const dynamic = 'force-dynamic'
 
 export default async function BuscarAvanzadoPage() {
   const db = getDb()

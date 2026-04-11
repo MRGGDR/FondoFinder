@@ -16,6 +16,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getDb } from '@/lib/db'
 import { authorizeAdminRequest } from '@/lib/adminGuardServer'
 
+export const dynamic = 'force-dynamic'
+
 interface UsuarioMunicipioRow {
   municipio_id: string
   nombre: string
