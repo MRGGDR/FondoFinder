@@ -7,7 +7,7 @@
  * NO usa Supabase Auth ni contraseñas.
  *
  * Flujos:
- *   A. "Ya tengo usuario" → recuperar perfil por usuario m.rey
+ *   A. "Ya tengo usuario" → recuperar perfil por usuario
  *   B. "Es mi primera vez" → crear perfil ligero con datos mínimos
  *   C. Confirmación → mostrar código al usuario recién registrado
  */
@@ -150,7 +150,7 @@ function FlujoCodigo({
         id="codigo_acceso"
         value={codigo}
         onChange={v => { setCodigo(v); setError(null) }}
-        placeholder="m.rey"
+        placeholder="usuario"
         required
         autoFocus
       />
@@ -508,7 +508,7 @@ function FlujoSeleccion({
           <div>
             <p className="font-black text-[#213362] group-hover:text-white text-sm transition-colors">Ya tengo usuario</p>
             <p className="text-xs text-gray-400 group-hover:text-white/70 mt-0.5 transition-colors">
-              Ingresa tu usuario (ej. m.rey) para recuperar tu perfil
+              Ingresa tu usuario para recuperar tu perfil
             </p>
           </div>
         </button>
