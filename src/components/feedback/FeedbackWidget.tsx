@@ -7,16 +7,16 @@ type Vista = 'boton' | 'formulario' | 'enviado'
 const TIPO_OPTIONS = [
   { value: 'sugerencia', label: 'Mejora' },
   { value: 'error', label: 'Reportar un error' },
-  { value: 'opinion', label: 'OpiniÃ³n general' },
+  { value: 'opinion', label: 'Opinión general' },
   { value: 'otro', label: 'Otro' },
 ]
 
 const VALORACION_OPTIONS = [
-  { value: 5, emoji: 'ðŸ˜„', label: 'Muy Ãºtil' },
-  { value: 4, emoji: 'ðŸ™‚', label: 'Ãštil' },
-  { value: 3, emoji: 'ðŸ˜', label: 'Regular' },
-  { value: 2, emoji: 'ðŸ™', label: 'Poco Ãºtil' },
-  { value: 1, emoji: 'ðŸ˜ž', label: 'No me sirviÃ³' },
+  { value: 5, emoji: '😄', label: 'Muy útil' },
+  { value: 4, emoji: '🙂', label: 'Útil' },
+  { value: 3, emoji: '😐', label: 'Regular' },
+  { value: 2, emoji: '🙁', label: 'Poco útil' },
+  { value: 1, emoji: '😞', label: 'No me sirvió' },
 ]
 
 export function FeedbackWidget() {
@@ -42,7 +42,7 @@ export function FeedbackWidget() {
 
   async function enviar() {
     if (!mensaje.trim() && valoracion === null) {
-      setErrorMsg('Escribe un comentario o selecciona una valoraciÃ³n.')
+      setErrorMsg('Escribe un comentario o selecciona una valoración.')
       return
     }
     setEnviando(true)
@@ -70,7 +70,7 @@ export function FeedbackWidget() {
     }
   }
 
-  // â”€â”€ BotÃ³n flotante â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Botón flotante ──────────────────────────────────────────────────────
   if (vista === 'boton') {
     return (
       <button
@@ -91,7 +91,7 @@ export function FeedbackWidget() {
     )
   }
 
-  // â”€â”€ Formulario / ConfirmaciÃ³n â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Formulario / Confirmación ──────────────────────────────────────────
   return (
     <>
       {/* Overlay */}
@@ -114,7 +114,7 @@ export function FeedbackWidget() {
         <div className="bg-[#213362] px-6 pt-5 pb-4 flex items-start justify-between">
           <div>
             <h2 className="text-white font-black text-base leading-tight">
-              {vista === 'enviado' ? 'Â¡Gracias por tu opiniÃ³n!' : 'Â¿CÃ³mo te fue con la herramienta?'}
+              {vista === 'enviado' ? '¡Gracias por tu opinión!' : '¿Cómo te fue con la herramienta?'}
             </h2>
             {vista !== 'enviado' && (
               <p className="text-white/60 text-xs mt-1">Tu comentario nos ayuda a mejorar.</p>
@@ -135,7 +135,7 @@ export function FeedbackWidget() {
         {/* Cuerpo enviado */}
         {vista === 'enviado' && (
           <div className="p-6 text-center">
-            <div className="text-5xl mb-3">ðŸ™Œ</div>
+            <div className="text-5xl mb-3">🙌</div>
             <p className="text-[#213362] font-bold text-sm leading-relaxed">
               Tu comentario fue registrado correctamente. Lo usaremos para seguir mejorando la herramienta.
             </p>
@@ -152,10 +152,10 @@ export function FeedbackWidget() {
         {/* Cuerpo formulario */}
         {vista === 'formulario' && (
           <div className="p-5 space-y-4">
-            {/* ValoraciÃ³n */}
+            {/* Valoración */}
             <div>
               <p className="text-xs font-black text-[#213362] uppercase tracking-wide mb-2">
-                Â¿CÃ³mo valoras la herramienta?
+                ¿Cómo valoras la herramienta?
               </p>
               <div className="flex gap-2 justify-between">
                 {VALORACION_OPTIONS.map(op => (
@@ -209,14 +209,14 @@ export function FeedbackWidget() {
             {/* Mensaje */}
             <div>
               <p className="text-xs font-black text-[#213362] uppercase tracking-wide mb-2">
-                CuÃ©ntanos mÃ¡s (opcional)
+                Cuéntanos más (opcional)
               </p>
               <textarea
                 value={mensaje}
                 onChange={e => setMensaje(e.target.value)}
                 rows={3}
                 maxLength={1000}
-                placeholder="Â¿QuÃ© te gustÃ³, quÃ© mejorarÃ­as o quÃ© fallo encontraste?"
+                placeholder="¿Qué te gustó, qué mejorarías o qué fallo encontraste?"
                 className="w-full rounded-xl border border-gray-200 px-3 py-2 text-sm
                   focus:outline-none focus:border-[#213362] resize-none text-gray-700
                   placeholder:text-gray-300"
@@ -235,7 +235,7 @@ export function FeedbackWidget() {
               className="w-full bg-[#213362] text-white rounded-2xl py-3 font-black text-sm
                 hover:bg-[#07519D] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              {enviando ? 'Enviando...' : 'Enviar comentario â†’'}
+              {enviando ? 'Enviando...' : 'Enviar comentario →'}
             </button>
           </div>
         )}
