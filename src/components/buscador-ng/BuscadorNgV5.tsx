@@ -517,6 +517,7 @@ export function BuscadorNgV5() {
   const [filtroEstado, setFiltroEstado] = useState<string[]>([])
   const [filtroPeriodicidad, setFiltroPeriodicidad] = useState<string[]>([])
   const [filtroAcceso, setFiltroAcceso] = useState<string[]>([])
+  const [manejoAbierto, setManejoAbierto] = useState(false)
 
   const canSearch = Boolean(state.actorId && state.tipoFondoId)
 
@@ -833,6 +834,15 @@ export function BuscadorNgV5() {
     setPaso(1)
   }
 
+  const SUB_MANEJO_KEYS = ['respuesta', 'atencion', 'recuperacion', 'rehabilitacion']
+  const subprocesosManejo = [...procesos]
+    .filter(p => SUB_MANEJO_KEYS.some(k => n(p.nombre).includes(k)))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  const procesosGrdTop = [...procesos]
+    .filter(p => !SUB_MANEJO_KEYS.some(k => n(p.nombre).includes(k)) && !n(p.nombre).includes('manejo'))
+    .sort((a, b) => a.nombre.localeCompare(b.nombre, 'es'))
+  const algunSubManejoSel = subprocesosManejo.some(p => state.procesoIds.includes(p.id))
+
   const resultadosVisibles = resultados.filter(item => {
     const vigenciaOk =
       state.vigenciasSeleccionadas.length === 0 ||
@@ -1036,43 +1046,145 @@ export function BuscadorNgV5() {
                       ¿Procesos GRD?
                     </h2>
                     <p className="text-gray-500 font-medium leading-relaxed text-sm">
-                      Selecciona uno o más procesos de gestión del riesgo relacionados con tu iniciativa. Opcional.
+                      La Ley 1523 de 2012 establece 3 procesos de gestión del riesgo de desastres:{' '}
+                      <strong className="text-[#213362]">Conocimiento del Riesgo</strong>,{' '}
+                      <strong className="text-[#213362]">Reducción del Riesgo</strong> y{' '}
+                      <strong className="text-[#213362]">Manejo de Desastres</strong>. Este último
+                      comprende dos subprocesos—{' '}
+                      <em>Respuesta</em> y <em>Recuperación</em>—que puedes seleccionar
+                      haciendo clic en la tarjeta de Manejo de Desastres para desplegarlos.{' '}
+                      <span className="text-gray-400">Opcional.</span>
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap justify-center gap-4" role="group">
-                    {[...procesos].sort((a, b) => a.nombre.localeCompare(b.nombre, 'es')).map(proceso => {
-                      const isSelected = state.procesoIds.includes(proceso.id)
-                      return (
+                  <div className="flex flex-col items-center gap-2" role="group">
+                    {/* ── Fila única con todos los procesos principales ── */}
+                    <div className="flex justify-center gap-4 w-full flex-wrap">
+                      {procesosGrdTop.map(proceso => {
+                        const isSelected = state.procesoIds.includes(proceso.id)
+                        return (
+                          <button
+                            key={proceso.id}
+                            type="button"
+                            onClick={() => {
+                              setState(prev => ({
+                                ...prev,
+                                procesoIds: toggleIds(prev.procesoIds, proceso.id),
+                                categoriaId: null,
+                                actividadIds: [],
+                                entidadesSeleccionadas: [],
+                                vigenciasSeleccionadas: [],
+                              }))
+                            }}
+                            className={[
+                              'flex-1 min-w-[160px] max-w-[260px] rounded-2xl p-5 text-left border-2 transition-all',
+                              isSelected
+                                ? 'bg-[#213362] border-[#213362] shadow-xl shadow-[#213362]/30 text-white'
+                                : 'bg-white border-gray-200 hover:border-[#213362] hover:shadow-xl',
+                            ].join(' ')}
+                          >
+                            <WizardIcon
+                              type={getProcesoIcon(proceso.nombre)}
+                              className={`w-4 h-4 mb-2 ${isSelected ? 'text-[#FFCD00]' : 'text-[#07519D]'}`}
+                            />
+                            <h4 className={`text-sm font-black ${isSelected ? 'text-white' : 'text-[#213362]'}`}>
+                              {proceso.nombre}
+                            </h4>
+                          </button>
+                        )
+                      })}
+
+                      {/* Tarjeta Manejo de Desastres en la misma fila */}
+                      {subprocesosManejo.length > 0 && (
                         <button
-                          key={proceso.id}
-                          onClick={() => {
-                            setState(prev => ({
-                              ...prev,
-                              procesoIds: toggleIds(prev.procesoIds, proceso.id),
-                              categoriaId: null,
-                              actividadIds: [],
-                              entidadesSeleccionadas: [],
-                              vigenciasSeleccionadas: [],
-                            }))
-                          }}
+                          type="button"
+                          onClick={() => setManejoAbierto(prev => !prev)}
+                          aria-expanded={manejoAbierto}
                           className={[
-                            'relative rounded-2xl p-5 text-left border-2 transition-all w-full md:w-[calc(50%-8px)] lg:w-[calc(25%-12px)] max-w-[280px]',
-                            isSelected
-                              ? 'bg-[#213362] border-[#213362] shadow-xl shadow-[#213362]/30 text-white'
+                            'flex-1 min-w-[160px] max-w-[260px] rounded-2xl p-5 text-left border-2 transition-all',
+                            'flex items-start justify-between',
+                            algunSubManejoSel
+                              ? 'bg-[#213362] border-[#213362] shadow-xl shadow-[#213362]/30'
+                              : manejoAbierto
+                              ? 'bg-white border-[#213362] shadow-xl'
                               : 'bg-white border-gray-200 hover:border-[#213362] hover:shadow-xl',
                           ].join(' ')}
                         >
-                          <WizardIcon
-                            type={getProcesoIcon(proceso.nombre)}
-                            className={`w-4 h-4 mb-2 ${isSelected ? 'text-[#FFCD00]' : 'text-[#07519D]'}`}
-                          />
-                          <h4 className={`text-sm font-black ${isSelected ? 'text-white' : 'text-[#213362]'}`}>
-                            {proceso.nombre}
-                          </h4>
+                          <div>
+                            <WizardIcon
+                              type="zap"
+                              className={`w-4 h-4 mb-2 ${algunSubManejoSel || manejoAbierto ? 'text-[#FFCD00]' : 'text-[#07519D]'}`}
+                            />
+                            <h4 className={`text-sm font-black ${algunSubManejoSel ? 'text-white' : 'text-[#213362]'}`}>
+                              Manejo de Desastres
+                            </h4>
+                            <p className={`text-xs mt-1 ${algunSubManejoSel ? 'text-white/70' : 'text-gray-400'}`}>
+                              {algunSubManejoSel
+                                ? `${subprocesosManejo.filter(p => state.procesoIds.includes(p.id)).length} subproceso(s) seleccionado(s)`
+                                : 'Ver subprocesos →'}
+                            </p>
+                          </div>
+                          <svg
+                            viewBox="0 0 24 24" fill="none" stroke="currentColor"
+                            strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+                            className={[
+                              'w-4 h-4 mt-1 shrink-0 transition-transform duration-300',
+                              manejoAbierto ? 'rotate-180' : '',
+                              algunSubManejoSel ? 'text-white/60' : 'text-gray-400',
+                            ].join(' ')}
+                            aria-hidden
+                          >
+                            <polyline points="6 9 12 15 18 9" />
+                          </svg>
                         </button>
-                      )
-                    })}
+                      )}
+                    </div>
+
+                    {/* ── Segunda fila: subprocesos de Manejo de Desastres ── */}
+                    {subprocesosManejo.length > 0 && (
+                      <div
+                        className="grid transition-all duration-300 ease-in-out w-full"
+                        style={{ gridTemplateRows: manejoAbierto ? '1fr' : '0fr' }}
+                      >
+                        <div className="overflow-hidden">
+                          <div className="flex justify-center gap-4 pt-3">
+                            {subprocesosManejo.map(proceso => {
+                              const isSelected = state.procesoIds.includes(proceso.id)
+                              return (
+                                <button
+                                  key={proceso.id}
+                                  type="button"
+                                  onClick={() => {
+                                    setState(prev => ({
+                                      ...prev,
+                                      procesoIds: toggleIds(prev.procesoIds, proceso.id),
+                                      categoriaId: null,
+                                      actividadIds: [],
+                                      entidadesSeleccionadas: [],
+                                      vigenciasSeleccionadas: [],
+                                    }))
+                                  }}
+                                  className={[
+                                    'flex-1 min-w-[160px] max-w-[260px] rounded-xl p-4 text-left border-2 transition-all',
+                                    isSelected
+                                      ? 'bg-[#213362] border-[#213362] shadow-lg shadow-[#213362]/30 text-white'
+                                      : 'bg-white border-gray-200 hover:border-[#213362] hover:shadow-lg',
+                                  ].join(' ')}
+                                >
+                                  <WizardIcon
+                                    type={getProcesoIcon(proceso.nombre)}
+                                    className={`w-4 h-4 mb-2 ${isSelected ? 'text-[#FFCD00]' : 'text-[#07519D]'}`}
+                                  />
+                                  <h4 className={`text-sm font-black ${isSelected ? 'text-white' : 'text-[#213362]'}`}>
+                                    {proceso.nombre}
+                                  </h4>
+                                </button>
+                              )
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
 
                   <div className="text-center mt-8 flex justify-center gap-8">

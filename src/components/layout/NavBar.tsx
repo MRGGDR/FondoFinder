@@ -71,25 +71,28 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
               type="button"
               aria-label={item.title}
               style={{
-                width: '48px',
-                height: '48px',
-                borderRadius: '50%',
                 border: '0',
                 backgroundColor: 'transparent',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
+                gap: '3px',
+                padding: '6px 10px',
+                borderRadius: '12px',
                 transition: 'transform 0.2s ease, filter 0.2s ease, opacity 0.2s ease',
                 cursor: 'pointer',
-                opacity: activo ? 1 : 0.7,
+                opacity: activo ? 1 : 0.65,
               }}
               onMouseEnter={e => {
-                e.currentTarget.style.transform = 'translateY(-3px)'
+                e.currentTarget.style.transform = 'translateY(-2px)'
                 e.currentTarget.style.filter = activeDrop
+                e.currentTarget.style.opacity = '1'
               }}
               onMouseLeave={e => {
                 e.currentTarget.style.transform = 'translateY(0)'
                 e.currentTarget.style.filter = 'none'
+                e.currentTarget.style.opacity = activo ? '1' : '0.65'
               }}
               onClick={() => {
                 if (pathname === item.href) return
@@ -100,14 +103,25 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
               <Image
                 src={iconSrc!}
                 alt={item.title}
-                width={28}
-                height={28}
+                width={26}
+                height={26}
                 style={{
                   filter: activo ? activeDrop : 'none',
                   objectFit: 'contain',
                 }}
                 priority={idx === 0}
               />
+              <span
+                style={{
+                  fontSize: '11px',
+                  fontWeight: activo ? 800 : 600,
+                  color: isHero ? (activo ? '#FFCD00' : 'rgba(255,255,255,0.85)') : (activo ? '#213362' : '#555'),
+                  letterSpacing: '0.01em',
+                  lineHeight: 1,
+                }}
+              >
+                {item.title}
+              </span>
             </button>
           )
         })}
