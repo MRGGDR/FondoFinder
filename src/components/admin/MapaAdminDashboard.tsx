@@ -512,19 +512,19 @@ export default function MapaAdminPage() {
     }
 
     fetch('/api/admin/analytics/kpis', { headers: adminHeaders })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
       .then(data => setKpis(data))
       .catch(console.error)
       .finally(() => setKpisLoading(false))
 
     fetch('/api/admin/analytics/usuarios-mapa', { headers: adminHeaders })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
       .then(data => setUsuariosMapa(data))
       .catch(console.error)
       .finally(() => setUsuariosLoading(false))
 
     fetch('/api/admin/analytics/mapa-origen', { headers: adminHeaders })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
       .then(data => {
         const list: TerritorioResumen[] = data.territorios ?? []
         setTerritorios(list)
@@ -545,7 +545,7 @@ export default function MapaAdminPage() {
   useEffect(() => {
     if (!esAdmin || !perfil) return
     fetch(`/api/admin/analytics/mapa-origen?modo=${colorMode}`, { headers: adminHeaders })
-      .then(r => r.json())
+      .then(r => { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json() })
       .then(data => {
         setTerritorios(data.territorios ?? [])
       })
@@ -841,7 +841,7 @@ export default function MapaAdminPage() {
         </div>
 
         {/* Top Fondos globales */}
-        {kpis && kpis.top_fondos.length > 0 && (
+        {kpis && (kpis.top_fondos?.length ?? 0) > 0 && (
           <div className="mt-6 bg-white rounded-2xl border border-gray-100 shadow-sm p-5">
             <h2 className="text-sm font-bold text-[#213362] mb-3">Top fondos globales</h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
