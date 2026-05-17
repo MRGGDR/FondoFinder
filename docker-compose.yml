@@ -1,0 +1,31 @@
+# Entorno de desarrollo local con hot reload
+# Uso: docker compose up
+# Requiere: archivo .env.local con las variables de entorno
+
+services:
+  app:
+    build:
+      context: .
+      target: deps        # Solo instala deps, no hace full build
+    image: fondofinder-dev
+    command: npx next dev
+    ports:
+      - "3000:3000"
+    volumes:
+      # Hot reload: montar código fuente
+      - ./src:/app/src
+      - ./public:/app/public
+      - ./next.config.js:/app/next.config.js
+      - ./tailwind.config.ts:/app/tailwind.config.ts
+      - ./postcss.config.js:/app/postcss.config.js
+      - ./tsconfig.json:/app/tsconfig.json
+      # Cache de Next.js persistente entre reinicios
+      - nextjs_dev_cache:/app/.next
+    env_file:
+      - .env.local
+    environment:
+      - NODE_ENV=development
+      - NEXT_TELEMETRY_DISABLED=1
+
+volumes:
+  nextjs_dev_cache:

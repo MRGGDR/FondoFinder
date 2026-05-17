@@ -1,0 +1,28 @@
+# Entorno de producción
+# Uso: docker compose -f docker-compose.prod.yml up -d
+# Requiere: archivo .env en la raíz del proyecto
+
+services:
+  app:
+    build:
+      context: .
+      target: runner      # Imagen final optimizada (standalone)
+      args:
+        # Variables públicas baked en el build — se leen del .env raíz
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+    image: fondofinder:latest
+    ports:
+      - "3000:3000"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+      - NEXT_TELEMETRY_DISABLED=1
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/ng/montos"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 20s

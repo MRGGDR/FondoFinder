@@ -5,6 +5,7 @@
 .env.development
 .env.production
 .env.test
+.claude/
 
 # ---- Next.js ----
 .next/
