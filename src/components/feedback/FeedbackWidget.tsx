@@ -77,7 +77,7 @@ export function FeedbackWidget() {
         onClick={abrir}
         aria-label="Dejar comentario o sugerencia"
         className="fixed bottom-6 right-6 z-50 flex items-center gap-2 bg-[#213362] text-white
-          pl-4 pr-5 py-3 rounded-full shadow-2xl shadow-[#213362]/40
+          p-3 sm:pl-4 sm:pr-5 sm:py-3 rounded-full shadow-2xl shadow-[#213362]/40
           hover:bg-[#07519D] active:scale-95 transition-all text-sm font-black
           border-2 border-white/10"
       >
@@ -86,7 +86,7 @@ export function FeedbackWidget() {
           strokeLinecap="round" strokeLinejoin="round" className="w-4 h-4 shrink-0" aria-hidden>
           <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"/>
         </svg>
-        Comentarios
+        <span className="hidden sm:inline">Comentarios</span>
       </button>
     )
   }

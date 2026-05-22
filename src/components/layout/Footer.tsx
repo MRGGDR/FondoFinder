@@ -20,23 +20,23 @@ export default function Footer() {
           />
         </div>
 
-        <div className="flex flex-wrap items-center justify-center gap-6 md:gap-8 text-[#213362]">
+        <div className="grid grid-cols-2 md:flex md:flex-wrap items-center justify-center gap-3 md:gap-8 text-[#213362] w-full md:w-auto">
           {[
-            { label: '@GestionUNGRD', src: '/icons/facebook.png', href: 'https://www.facebook.com/GestionUNGRD' },
-            { label: '@UNGRD', src: '/icons/twitter.png', href: 'https://x.com/UNGRD' },
-            { label: 'UNGRD Gestión del Riesgo de Desastres', src: '/icons/youtube.png', href: 'https://www.youtube.com/@gestiondelriesgo-ungrd' },
-            { label: 'Unidad Nacional para la Gestión del Riesgo de Desastres', src: '/icons/linkedin.png', href: 'https://co.linkedin.com/company/ungrd' },
-            { label: '@ungrd_oficial', src: '/icons/instagram.png', href: 'https://www.instagram.com/ungrd_oficial' },
-            { label: '@ungrdcol', src: '/icons/tik-tok.png', href: 'https://www.tiktok.com/@ungrdcol' },
+            { label: '@GestionUNGRD',    shortLabel: '@GestionUNGRD',    src: '/icons/facebook.png', href: 'https://www.facebook.com/GestionUNGRD' },
+            { label: '@UNGRD',           shortLabel: '@UNGRD',           src: '/icons/twitter.png',  href: 'https://x.com/UNGRD' },
+            { label: 'UNGRD Gestión del Riesgo de Desastres',            shortLabel: 'UNGRD GRD',    src: '/icons/youtube.png',  href: 'https://www.youtube.com/@gestiondelriesgo-ungrd' },
+            { label: 'Unidad Nacional para la Gestión del Riesgo de Desastres', shortLabel: 'UNGRD LinkedIn', src: '/icons/linkedin.png', href: 'https://co.linkedin.com/company/ungrd' },
+            { label: '@ungrd_oficial',   shortLabel: '@ungrd_oficial',   src: '/icons/instagram.png',href: 'https://www.instagram.com/ungrd_oficial' },
+            { label: '@ungrdcol',        shortLabel: '@ungrdcol',        src: '/icons/tik-tok.png',  href: 'https://www.tiktok.com/@ungrdcol' },
           ].map(item => (
             <a
               key={item.label}
               href={item.href}
               target="_blank"
               rel="noreferrer"
-              className="flex items-center gap-2 text-inherit no-underline"
+              className="flex items-center gap-2 text-inherit no-underline min-w-0"
             >
-              <div className="w-10 h-10 rounded-full bg-[#FFCD00] flex items-center justify-center">
+              <div className="w-10 h-10 shrink-0 rounded-full bg-[#FFCD00] flex items-center justify-center">
                 <Image
                   src={item.src}
                   alt={item.label}
@@ -45,7 +45,8 @@ export default function Footer() {
                   style={{ width: 20, height: 20, objectFit: 'contain' }}
                 />
               </div>
-              <span className="text-sm font-semibold">{item.label}</span>
+              <span className="text-sm font-semibold md:hidden truncate">{item.shortLabel}</span>
+              <span className="text-sm font-semibold hidden md:inline">{item.label}</span>
             </a>
           ))}
         </div>

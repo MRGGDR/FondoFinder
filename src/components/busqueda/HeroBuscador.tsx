@@ -78,25 +78,25 @@ export function HeroBuscador({
           Identifica en minutos qué fondo financia tu proyecto de gestión del riesgo.
         </p>
 
-        <div className="flex flex-wrap items-center justify-center mb-8">
-          <div className="text-center px-6">
-            <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">33</div>
-            <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Fondos</div>
+        <div className="flex flex-nowrap items-center justify-center mb-8">
+          <div className="text-center px-2 sm:px-6">
+            <div className="text-[22px] sm:text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">33</div>
+            <div className="text-[8px] sm:text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Fondos</div>
           </div>
-          <div className="w-px h-9 bg-white/[0.12]" />
-          <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">6</div>
-            <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Nacionales</div>
+          <div className="w-px h-7 sm:h-9 bg-white/[0.12]" />
+          <div className="text-center px-2 sm:px-6">
+            <div className="text-[22px] sm:text-[32px] font-black text-white leading-none tracking-[-1px]">6</div>
+            <div className="text-[8px] sm:text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Nacionales</div>
           </div>
-          <div className="w-px h-9 bg-white/[0.12]" />
-          <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">8</div>
-            <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Territoriales</div>
+          <div className="w-px h-7 sm:h-9 bg-white/[0.12]" />
+          <div className="text-center px-2 sm:px-6">
+            <div className="text-[22px] sm:text-[32px] font-black text-white leading-none tracking-[-1px]">8</div>
+            <div className="text-[8px] sm:text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Territoriales</div>
           </div>
-          <div className="w-px h-9 bg-white/[0.12]" />
-          <div className="text-center px-6">
-            <div className="text-[32px] font-black text-white leading-none tracking-[-1px]">19</div>
-            <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Internacionales</div>
+          <div className="w-px h-7 sm:h-9 bg-white/[0.12]" />
+          <div className="text-center px-2 sm:px-6">
+            <div className="text-[22px] sm:text-[32px] font-black text-white leading-none tracking-[-1px]">19</div>
+            <div className="text-[8px] sm:text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Internacionales</div>
           </div>
         </div>
 
@@ -126,11 +126,11 @@ export function HeroBuscador({
           )}
 
           {ctaVariant === 'triple' && (
-            <div className="flex flex-col sm:flex-row items-center gap-4">
+            <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto px-2 sm:px-0">
               <button
                 onClick={onComenzar}
                 className="group flex flex-col items-center gap-1.5 bg-[#FFCD00] text-[#213362]
-                  px-8 py-5 rounded-2xl min-w-[210px]
+                  px-8 py-5 rounded-2xl w-full sm:min-w-[210px] sm:w-auto
                   shadow-[0_8px_32px_rgba(255,205,0,0.30)]
                   hover:brightness-110 hover:scale-[1.02]
                   active:scale-95 transition-all"
@@ -145,7 +145,7 @@ export function HeroBuscador({
               <button
                 onClick={onBuscadorAvanzado ?? (() => {})}
                 className="group flex flex-col items-center gap-1.5 bg-white/10 text-white
-                  px-8 py-5 rounded-2xl min-w-[210px]
+                  px-8 py-5 rounded-2xl w-full sm:min-w-[210px] sm:w-auto
                   border border-white/25
                   hover:bg-white/15 hover:scale-[1.02]
                   active:scale-95 transition-all"
