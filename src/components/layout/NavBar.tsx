@@ -127,6 +127,55 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
             </button>
           )
         })}
+
+        {/* Botón Manual — descarga el instructivo */}
+        <a
+          href="/fichas-fondos/Instructivo%20Herramienta%20Financiamiento_impresion.pdf"
+          download="Manual_Herramienta_Financiamiento.pdf"
+          aria-label="Descargar manual de usuario"
+          style={{
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '3px',
+            padding: '6px 10px',
+            borderRadius: '12px',
+            transition: 'transform 0.2s ease, opacity 0.2s ease',
+            cursor: 'pointer',
+            opacity: 0.65,
+            textDecoration: 'none',
+          }}
+          onMouseEnter={e => {
+            e.currentTarget.style.transform = 'translateY(-2px)'
+            e.currentTarget.style.opacity = '1'
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.transform = 'translateY(0)'
+            e.currentTarget.style.opacity = '0.65'
+          }}
+        >
+          <svg
+            width="26" height="26" viewBox="0 0 24 24"
+            fill="none" stroke={isHero ? 'rgba(255,255,255,0.85)' : '#555'}
+            strokeWidth={2} strokeLinecap="round" strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+          <span
+            style={{
+              fontSize: '11px',
+              fontWeight: 600,
+              color: isHero ? 'rgba(255,255,255,0.85)' : '#555',
+              letterSpacing: '0.01em',
+              lineHeight: 1,
+            }}
+          >
+            Manual
+          </span>
+        </a>
       </div>
 
       <div style={{ width: 'clamp(0px, 8vw, 180px)' }} />

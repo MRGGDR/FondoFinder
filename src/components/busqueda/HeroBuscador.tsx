@@ -160,6 +160,17 @@ export function HeroBuscador({
           )}
         </div>
 
+        {/* Link descarga manual */}
+        <a
+          href="/fichas-fondos/Instructivo%20Herramienta%20Financiamiento_impresion.pdf"
+          download="Manual_Herramienta_Financiamiento.pdf"
+          className="mt-3 text-white/40 text-xs font-semibold hover:text-white/70
+            transition-colors text-center leading-relaxed"
+        >
+          ¿Necesitas ayuda navegando la herramienta?{' '}
+          <span className="underline underline-offset-2">Descarga el manual aquí</span>
+        </a>
+
         <div
           aria-hidden="true"
           className="pointer-events-none absolute bottom-0 left-0 right-0 h-[14px] md:h-[16px] lg:h-[18px] z-30"
