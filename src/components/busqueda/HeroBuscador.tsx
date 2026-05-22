@@ -162,7 +162,7 @@ export function HeroBuscador({
 
         {/* Link descarga manual */}
         <a
-          href="/fichas-fondos/Instructivo%20Herramienta%20Financiamiento_impresion.pdf"
+          href="/api/manual"
           download="Manual_Herramienta_Financiamiento.pdf"
           className="mt-3 text-white/40 text-xs font-semibold hover:text-white/70
             transition-colors text-center leading-relaxed"

@@ -130,7 +130,7 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
 
         {/* Botón Manual — descarga el instructivo */}
         <a
-          href="/fichas-fondos/Instructivo%20Herramienta%20Financiamiento_impresion.pdf"
+          href="/api/manual"
           download="Manual_Herramienta_Financiamiento.pdf"
           aria-label="Descargar manual de usuario"
           style={{

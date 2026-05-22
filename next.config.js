@@ -10,20 +10,6 @@ const nextConfig = {
     }
     return config
   },
-  async headers() {
-    return [
-      {
-        // Fuerza descarga directa del instructivo sin mostrar diálogo de abrir/descargar
-        source: '/fichas-fondos/Instructivo:path*',
-        headers: [
-          {
-            key: 'Content-Disposition',
-            value: 'attachment; filename="Manual_Herramienta_Financiamiento.pdf"',
-          },
-        ],
-      },
-    ]
-  },
 }
 
 module.exports = nextConfig
