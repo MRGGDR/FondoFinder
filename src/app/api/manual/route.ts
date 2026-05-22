@@ -15,7 +15,7 @@ export async function GET() {
       process.cwd(),
       'public',
       'fichas-fondos',
-      'Instructivo Herramienta Financiamiento_impresion.pdf',
+      'guia_usuario_financiamiento_PNGRD.pdf',
     )
 
     const buffer = await readFile(filePath)
