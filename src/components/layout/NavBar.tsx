@@ -129,11 +129,12 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
         })}
 
         {/* Botón Manual — descarga el instructivo */}
-        <a
-          href="/api/manual"
-          download="Manual_Herramienta_Financiamiento.pdf"
+        <button
+          type="button"
           aria-label="Descargar manual de usuario"
           style={{
+            border: '0',
+            background: 'transparent',
             display: 'flex',
             flexDirection: 'column',
             alignItems: 'center',
@@ -144,7 +145,6 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
             transition: 'transform 0.2s ease, opacity 0.2s ease',
             cursor: 'pointer',
             opacity: 0.65,
-            textDecoration: 'none',
           }}
           onMouseEnter={e => {
             e.currentTarget.style.transform = 'translateY(-2px)'
@@ -153,6 +153,18 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
           onMouseLeave={e => {
             e.currentTarget.style.transform = 'translateY(0)'
             e.currentTarget.style.opacity = '0.65'
+          }}
+          onClick={async () => {
+            const res = await fetch('/api/manual')
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'Manual_Herramienta_Financiamiento.pdf'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
           }}
         >
           <svg
@@ -175,7 +187,7 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
           >
             Manual
           </span>
-        </a>
+        </button>
       </div>
 
       <div style={{ width: 'clamp(0px, 8vw, 180px)' }} />

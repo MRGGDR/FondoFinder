@@ -161,15 +161,26 @@ export function HeroBuscador({
         </div>
 
         {/* Link descarga manual */}
-        <a
-          href="/api/manual"
-          download="Manual_Herramienta_Financiamiento.pdf"
+        <button
+          type="button"
           className="mt-3 text-white/40 text-xs font-semibold hover:text-white/70
-            transition-colors text-center leading-relaxed"
+            transition-colors text-center leading-relaxed bg-transparent border-0 cursor-pointer p-0"
+          onClick={async () => {
+            const res = await fetch('/api/manual')
+            const blob = await res.blob()
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = 'Manual_Herramienta_Financiamiento.pdf'
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          }}
         >
           ¿Necesitas ayuda navegando la herramienta?{' '}
           <span className="underline underline-offset-2">Descarga el manual aquí</span>
-        </a>
+        </button>
 
         <div
           aria-hidden="true"
