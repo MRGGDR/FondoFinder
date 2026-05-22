@@ -166,7 +166,8 @@ export function HeroBuscador({
           className="mt-3 text-white/40 text-xs font-semibold hover:text-white/70
             transition-colors text-center leading-relaxed bg-transparent border-0 cursor-pointer p-0"
           onClick={async () => {
-            const res = await fetch('/api/manual')
+            const res = await fetch('/fichas-fondos/guia_usuario_financiamiento_PNGRD.pdf')
+            if (!res.ok) return
             const blob = await res.blob()
             const url = URL.createObjectURL(blob)
             const a = document.createElement('a')
