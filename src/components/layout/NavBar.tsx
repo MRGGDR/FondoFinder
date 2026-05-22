@@ -31,23 +31,25 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'flex-start',
-        paddingLeft: '48px',
-        paddingRight: '64px',
+        paddingLeft: 'clamp(16px, 4vw, 48px)',
+        paddingRight: 'clamp(16px, 5vw, 64px)',
         paddingTop: '18px',
-        height: '92px',
+        height: '72px',
       }}
     >
       <Image
         src={isHero ? '/logo-ungrd-blanco.png' : '/logo-ungrd.png'}
         alt="UNGRD"
-        height={isHero ? 78 : 64}
-        width={210}
+        height={isHero ? 56 : 48}
+        width={isHero ? 160 : 140}
         style={{
           objectFit: 'contain',
           objectPosition: 'left center',
           marginTop: '0px',
           display: 'block',
           filter: 'none',
+          maxWidth: 'clamp(110px, 30vw, 210px)',
+          height: 'auto',
         }}
         priority
       />
@@ -57,8 +59,8 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
           marginLeft: 'auto',
           display: 'flex',
           alignItems: 'center',
-          gap: '10px',
-          padding: '0 6px',
+          gap: 'clamp(2px, 1.5vw, 10px)',
+          padding: '0 4px',
         }}
       >
         {navItems.map((item, idx) => {
@@ -127,7 +129,7 @@ export function NavBar({ variant = 'hero' }: { variant?: 'hero' | 'light' }) {
         })}
       </div>
 
-      <div style={{ width: '180px' }} />
+      <div style={{ width: 'clamp(0px, 8vw, 180px)' }} />
       <UNGRDLoader
         visible={loader.visible}
         contexto={loader.contexto}

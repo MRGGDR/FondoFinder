@@ -27,8 +27,8 @@ export function HeroBuscador({
   return (
     <>
       <section
-        className="min-h-screen bg-[#213362] flex flex-col items-center justify-center px-6 text-center pb-20 relative overflow-hidden"
-        style={{ paddingTop: '72px' }}
+        className="min-h-screen bg-[#213362] flex flex-col items-center justify-center px-4 sm:px-6 text-center pb-20 relative overflow-hidden"
+        style={{ paddingTop: '100px' }}
         aria-label="Buscador de fondos"
       >
         <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
@@ -48,22 +48,22 @@ export function HeroBuscador({
 
         <div
           className="inline-flex items-center gap-2 bg-[#FFCD00]/10
-          border border-[#FFCD00]/20 text-[#FFCD00] text-[10px] font-bold
-          px-4 py-[5px] rounded-full tracking-[1px] uppercase mb-8"
+          border border-[#FFCD00]/20 text-[#FFCD00] text-[9px] sm:text-[10px] font-bold
+          px-3 sm:px-4 py-[5px] rounded-full tracking-[1px] uppercase mb-6 sm:mb-8"
         >
           <div className="w-[5px] h-[5px] bg-[#FFCD00] rounded-full flex-shrink-0" />
           Herramienta digital para el financiamiento del PNGRD
         </div>
 
         <h1
-          className="text-[68px] md:text-[80px] font-black text-white
-          text-center leading-[1.05] tracking-[-2px] mb-6"
+          className="text-[40px] sm:text-[54px] md:text-[68px] lg:text-[80px] font-black text-white
+          text-center leading-[1.05] tracking-[-1px] sm:tracking-[-2px] mb-6"
         >
           Encuentra el
           <br />
           <span
-            className="block text-[80px] md:text-[96px] leading-none
-            tracking-[-3px] text-[#FFCD00] italic underline
+            className="block text-[44px] sm:text-[64px] md:text-[80px] lg:text-[96px] leading-none
+            tracking-[-2px] sm:tracking-[-3px] text-[#FFCD00] italic underline
             decoration-white/15 underline-offset-[8px]"
           >
             fondo de financiamiento
@@ -72,13 +72,13 @@ export function HeroBuscador({
         </h1>
 
         <p
-          className="text-white/50 text-base md:text-lg font-normal
+          className="text-white/50 text-sm md:text-base lg:text-lg font-normal
           leading-relaxed max-w-[520px] mb-8"
         >
           Identifica en minutos qué fondo financia tu proyecto de gestión del riesgo.
         </p>
 
-        <div className="flex items-center justify-center mb-8">
+        <div className="flex flex-wrap items-center justify-center mb-8">
           <div className="text-center px-6">
             <div className="text-[32px] font-black text-[#FFCD00] leading-none tracking-[-1px]">33</div>
             <div className="text-[9px] font-bold text-white/30 uppercase tracking-[1px] mt-[3px]">Fondos</div>

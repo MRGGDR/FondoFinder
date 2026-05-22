@@ -9,7 +9,7 @@ export default function Footer() {
         <div style={{ flex: '0 0 25%', background: '#d80e25' }} />
       </div>
 
-      <div className="py-20 px-6 flex flex-col items-center gap-10">
+      <div className="py-10 md:py-20 px-6 flex flex-col items-center gap-8 md:gap-10">
         <div className="flex items-center justify-center">
           <Image
             src="/logo-ungrd.png"
