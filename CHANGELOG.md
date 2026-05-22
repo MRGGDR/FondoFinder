@@ -5,6 +5,33 @@ Formato basado en [Keep a Changelog](https://keepachangelog.com/es/1.0.0/).
 
 ---
 
+## [5.2.0] - 2026-05-21
+
+### Resumen
+Mejoras de experiencia móvil, nueva funcionalidad de descarga del manual de usuario y ajustes de lenguaje en el modal de acceso.
+
+### Agregado
+- `public/fichas-fondos/guia_usuario_financiamiento_PNGRD.pdf` — manual de usuario incluido en el repositorio
+- `src/app/api/manual/route.ts` — ruta API para servir el PDF con cabecera `Content-Disposition: attachment`
+- Botón **Manual** en NavBar (ícono libro + etiqueta, visible en escritorio y móvil)
+- Enlace de descarga del manual en `HeroBuscador` ("¿Necesitas ayuda navegando la herramienta? Descarga el manual aquí")
+
+### Cambiado
+- `src/app/layout.tsx` — viewport configurado con `width: device-width`, `initialScale: 1`, `maximumScale: 5` para corregir zoom incorrecto en móviles
+- `src/components/layout/NavBar.tsx` — padding responsivo con `clamp()`, logo responsivo, gap de ítems con `clamp()`, espaciador `clamp(0px, 8vw, 180px)`; botón Manual usa patrón `fetch → blob → createObjectURL` para descarga confiable en Samsung Browser
+- `src/components/busqueda/HeroBuscador.tsx` — `paddingTop` fijo a `100px` (corrección overlap badge/navbar); botones CTA `w-full sm:w-auto`; fila de stats `flex-nowrap` con `px-2 sm:px-6` y números compactos en móvil; enlace manual usa patrón `fetch → blob → createObjectURL`
+- `src/components/layout/Footer.tsx` — social links en grid `grid-cols-2 md:flex`; etiquetas cortas en móvil (`shortLabel`); padding `py-10 md:py-20`
+- `src/components/feedback/FeedbackWidget.tsx` — texto "Comentarios" oculto en móvil (`hidden sm:inline`), solo ícono visible
+- `src/components/ui/NavigationLoader.tsx` — omite links con atributo `download` para no activar el loader al descargar PDFs
+- `src/components/access/AccessModal.tsx` — texto "perfil ligero de acceso" cambiado a "perfil de consulta"; botón "Es mi primera vez" renombrado a "Crea tu perfil de consulta"
+
+### Corregido
+- Descarga del manual en Samsung Browser y Chrome Android: patrón `fetch → blob → createObjectURL` reemplaza `<a download>` que abría un diálogo de abrir/descargar
+- PDF del manual mostraba "archivo dañado": el PDF no estaba rastreado en git; corregido con `git add -f`
+- URL del PDF con espacios (`%20`) causaba que navegadores sirvieran HTML en lugar del PDF; renombrado a `guia_usuario_financiamiento_PNGRD.pdf`
+
+---
+
 ## [5.1.0] - 2026-04-11
 
 ### Resumen

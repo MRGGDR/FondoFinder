@@ -488,7 +488,7 @@ function FlujoSeleccion({
           Identifica tu usuario
         </h2>
         <p className="text-sm text-gray-400 mt-2">
-          Para usar la herramienta necesitas un perfil ligero de acceso.<br />
+          Para usar la herramienta necesitas un perfil de consulta.<br />
           Solo toma unos segundos.
         </p>
       </div>
@@ -525,9 +525,9 @@ function FlujoSeleccion({
             </svg>
           </div>
           <div>
-            <p className="font-black text-[#213362] text-sm">Es mi primera vez</p>
+            <p className="font-black text-[#213362] text-sm">Crea tu perfil de consulta</p>
             <p className="text-xs text-gray-400 mt-0.5 group-hover:text-[#213362]/70 transition-colors">
-              Crea tu perfil ligero en menos de un minuto
+              en menos de un minuto
             </p>
           </div>
         </button>
