@@ -41,6 +41,9 @@ export function NavigationLoader() {
       const isInternal = href.startsWith('/') && !href.startsWith('//')
       if (!isInternal) return
 
+      // No activar loader en links de descarga (PDF, etc.)
+      if (anchor.hasAttribute('download')) return
+
       // No mostrar si es la misma ruta
       const targetPath = href.split('?')[0].split('#')[0]
       if (targetPath === pathname) return
